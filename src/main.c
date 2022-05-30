@@ -29,6 +29,8 @@ void inserir_obra_na_pagina(Pagina *pagina, Obra *obra);
 void adiciona_pagina_no_arquivo(Pagina *pagina, unsigned int indice);
 
 
+void teste_imprimir_paginas();
+
 Arvore *arvore;
 
 int main() {
@@ -118,13 +120,42 @@ void cria_no_e_insere_na_arvore(No *no, Obra *obra) {
     no->indicePaginaEsquerda = arvore->qtdNos;
 
     pagina = cria_pagina_vazia();
-    adiciona_pagina_no_arquivo(&pagina, arvore->qtdNos);
     no->indicePaginaDireita = arvore->qtdNos + 1;
+  }
+  else {
+    if (no->tipo == AUTOR_NO) {
+      if (strcmp(obra->autor, no->autor) <= 0) {
+        if (no->noFilhoEsquerdo == NULL) {
+          no->noFilhoEsquerdo = cria_no_vazio(ANO_NO);
+        }
+        cria_no_e_insere_na_arvore(no->noFilhoEsquerdo, obra);
+      }
+      else {
+        if (no->noFilhoDireito == NULL) {
+          no->noFilhoDireito = cria_no_vazio(ANO_NO);
+        }
+        cria_no_e_insere_na_arvore(no->noFilhoDireito, obra);
+      }
+    }
+    else {
+      if (obra->ano <= no->ano) {
+        if (no->noFilhoEsquerdo == NULL) {
+          no->noFilhoEsquerdo = cria_no_vazio(AUTOR_NO);
+        }
+        cria_no_e_insere_na_arvore(no->noFilhoEsquerdo, obra);
+      }
+      else {
+        if (no->noFilhoDireito == NULL) {
+          no->noFilhoDireito = cria_no_vazio(AUTOR_NO);
+        }
+        cria_no_e_insere_na_arvore(no->noFilhoDireito, obra);
+      }
+    }
   }
 }
 
 void estrutura_arvore_atraves_de_arquivo(FILE *arquivo) {
-  //TODO
+  teste_imprimir_paginas();
 }
 
 void insere_registro() {
@@ -171,8 +202,8 @@ FILE *abre_arquivo(char *nomeArquivo, char *modo){
 No *cria_no_vazio(TipoNo tipo) {
   No *no = (No*) malloc(sizeof(No));
   no->tipo = tipo;
-  no->noEsquerdo = NULL;
-  no->noDireito = NULL;
+  no->noFilhoEsquerdo = NULL;
+  no->noFilhoDireito = NULL;
   no->indicePaginaEsquerda = 0;
   no->indicePaginaDireita = 0;
 
@@ -235,4 +266,25 @@ void inserir_obra_na_pagina(Pagina *pagina, Obra *obra) {
   pagina->registros[pagina->qtdRegistros].obra = *obra;
   pagina->registros[pagina->qtdRegistros].ocupado = true;
   pagina->qtdRegistros++;
+}
+
+void teste_imprimir_paginas() {
+
+  FILE *arquivo = abre_arquivo(NOME_ARQUIVO, "r");
+  for (unsigned int i = 0; i < 8; i++)
+  {
+    printf("Pagina %u:\n", i);
+    Pagina pagina;
+    fread(&pagina, sizeof(Pagina), 1, arquivo);
+    for (int j = 0; j < NREGSPORPAGINA; j++)
+    {
+      if (pagina.registros[j].ocupado) {
+        printf("%s", pagina.registros[j].obra.autor);
+        printf("%s", pagina.registros[j].obra.nome);
+        printf("%u\n", pagina.registros[j].obra.ano);
+        printf("%s\n\n", pagina.registros[j].obra.arquivo);
+      }
+    }
+  }
+  fclose(arquivo);
 }

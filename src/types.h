@@ -44,8 +44,8 @@ struct No{
     char autor[TAMANHO_NOME];
     unsigned int ano;
   };
-  No* noEsquerdo;
-  No* noDireito;
+  No* noFilhoEsquerdo;
+  No* noFilhoDireito;
   unsigned int indicePaginaEsquerda;
   unsigned int indicePaginaDireita;
 };
