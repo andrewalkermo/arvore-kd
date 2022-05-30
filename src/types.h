@@ -1,9 +1,9 @@
 
 #include <stdbool.h>
 
-#define TAMANHO_NOME 21
-
 #define NREGSPORPAGINA 3
+#define TAMANHO_NOME 21
+#define NOME_ARQUIVO "arvore.dat"
 
 #define INSERE_REGISTRO 'i'
 #define CONSULTA_SIMPLES 'c'
@@ -15,7 +15,11 @@
 #define TERMINO_DA_SEQUENCIA_DE_COMANDOS 'e'
 
 typedef struct Obra Obra;
-typedef struct ArvoreKB ArvoreKB;
+typedef struct Arvore Arvore;
+typedef struct No No;
+typedef struct Pagina Pagina;
+typedef struct Registro Registro;
+typedef enum TipoNo TipoNo;
 
 struct Obra{
   char autor[TAMANHO_NOME];
@@ -24,27 +28,35 @@ struct Obra{
   char arquivo[TAMANHO_NOME];
 };
 
-struct ArvoreKB{
-
+enum TipoNo {
+  AUTOR_NO,
+  ANO_NO,
 };
 
-struct NoAutor{
-  char nome[TAMANHO_NOME];
-
+struct Arvore{
+  unsigned int qtdNos;
+  struct No *raiz;
 };
 
-struct NoAno{
-  unsigned int ano;
-};
-
-struct Pagina{
-  unsigned int qtdRegistros;
-  unsigned int proxima;
-  Obra registros[NREGSPORPAGINA];
+struct No{
+  enum TipoNo tipo;
+  union {
+    char autor[TAMANHO_NOME];
+    unsigned int ano;
+  };
+  No* noEsquerdo;
+  No* noDireito;
+  unsigned int indicePaginaEsquerda;
+  unsigned int indicePaginaDireita;
 };
 
 struct Registro{
   bool ocupado;
   Obra obra;
+};
 
+struct Pagina{
+  unsigned int qtdRegistros;
+  unsigned int proxima;
+  Registro registros[NREGSPORPAGINA];
 };

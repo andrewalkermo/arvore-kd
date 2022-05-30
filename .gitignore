@@ -1,2 +1,5 @@
 .vscode/*
 *.dat
+main
+src/main
+*.dat
