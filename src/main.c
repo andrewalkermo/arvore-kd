@@ -99,7 +99,6 @@ void inicializa_arvore_e_arquivo_com_entradas() {
     Obra *obra = le_obra_da_entrada();
 
     cria_no_e_insere_na_arvore(arvore->raiz, obra);
-    printf("%s\n", arvore->raiz->autor);
   }
   printf("arvore k-d gerada\n");
 }
