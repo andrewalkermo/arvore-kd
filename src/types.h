@@ -19,6 +19,7 @@ typedef struct Arvore Arvore;
 typedef struct No No;
 typedef struct Pagina Pagina;
 typedef struct Registro Registro;
+typedef struct CabecalhoArquivo CabecalhoArquivo;
 typedef enum TipoNo TipoNo;
 
 struct Obra{
@@ -29,8 +30,8 @@ struct Obra{
 };
 
 enum TipoNo {
-  AUTOR_NO,
-  ANO_NO,
+  TIPO_NO_AUTOR,
+  TIPO_NO_ANO,
 };
 
 struct Arvore{
@@ -46,8 +47,8 @@ struct No{
   };
   No* noFilhoEsquerdo;
   No* noFilhoDireito;
-  unsigned int indicePaginaEsquerda;
-  unsigned int indicePaginaDireita;
+  int indicePaginaEsquerda;
+  int indicePaginaDireita;
 };
 
 struct Registro{
@@ -59,4 +60,9 @@ struct Pagina{
   unsigned int qtdRegistros;
   unsigned int proxima;
   Registro registros[NREGSPORPAGINA];
+};
+
+struct CabecalhoArquivo{
+  unsigned int qtdNos;
+  unsigned int qtdPaginas;
 };
