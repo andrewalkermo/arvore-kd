@@ -14,12 +14,12 @@
 #define IMPRIME_PAGINA 'p'
 #define TERMINO_DA_SEQUENCIA_DE_COMANDOS 'e'
 
-typedef struct Obra Obra;
-typedef struct Arvore Arvore;
 typedef struct No No;
-typedef struct Pagina Pagina;
+typedef struct Obra Obra;
 typedef struct Registro Registro;
+typedef struct Pagina Pagina;
 typedef struct CabecalhoArquivo CabecalhoArquivo;
+
 typedef enum TipoNo TipoNo;
 
 struct Obra{
@@ -32,11 +32,6 @@ struct Obra{
 enum TipoNo {
   TIPO_NO_AUTOR,
   TIPO_NO_ANO,
-};
-
-struct Arvore{
-  unsigned int qtdNos;
-  struct No *raiz;
 };
 
 struct No{

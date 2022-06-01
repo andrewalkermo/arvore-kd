@@ -5,65 +5,66 @@
 
 #include "types.h"
 
-void insere_registro();
-void consulta_simples();
-void consulta_por_faixa_de_nomes_de_autores();
-void consulta_por_faixa_de_anos();
-void consulta_por_faixa_de_nomes_de_autores_e_anos();
-void imprime_indice_da_arvore();
-void imprime_pagina();
-void termino_da_sequencia_de_comandos();
-void prepara_arvore();
-void processa_comandos();
-void inicializa_arvore_e_arquivo_com_entradas();
-void estrutura_arvore_atraves_de_arquivo(FILE *arquivo);
+void processa_comandos(No *raiz);
+void processa_comando_insere_registro(No *raiz);
+void processa_comando_consulta_simples(No *raiz);
+void processa_comando_consulta_por_faixa_de_nomes_de_autores(No *raiz);
+void processa_comando_consulta_por_faixa_de_anos(No *raiz);
+void processa_comando_consulta_por_faixa_de_nomes_de_autores_e_anos(No *raiz);
+void processa_comando_imprime_indice_da_arvore(No *raiz);
+void processa_comando_imprime_pagina(No *raiz);
+
 void cria_no_e_insere_na_arvore(No *no, Obra *obra);
-FILE *abre_arquivo(char *nomeArquivo, char *modo);
+void inserir_obra_na_pagina(Pagina *pagina, Obra *obra);
+void adiciona_indices_das_paginas_na_arvore(No *no, unsigned int *indice);
+
+No *prepara_arvore();
+No *inicializa_arvore_e_arquivo_com_entradas();
+No *estrutura_arvore_atraves_de_arquivo(FILE *arquivo);
 No *cria_no_vazio(TipoNo tipo);
+
 bool no_esta_vazio(No *no);
 Obra *le_obra_da_entrada();
+Obra cria_obra_vazia();
 Pagina cria_pagina_vazia();
 Registro cria_registro_vazio();
-Obra cria_obra_vazia();
-void inserir_obra_na_pagina(Pagina *pagina, Obra *obra);
-void adiciona_pagina_no_arquivo(Pagina *pagina, unsigned int indice);
-void adiciona_indices_das_paginas_na_arvore(No *no, unsigned int *indice);
+FILE *abre_arquivo(char *nomeArquivo, char *modo);
+
 
 void teste_imprimir_paginas();
 void teste_imprimir_obras();
 
-Arvore *arvore;
 
 int main() {
-  prepara_arvore();
-  processa_comandos();
+  No *raiz = prepara_arvore();
+  processa_comandos(raiz);
   return 0;
 }
 
-void processa_comandos() {
+void processa_comandos(No *raiz) {
   char comando;
   while (scanf("%s", &comando)) {
     switch (comando) {
       case INSERE_REGISTRO:
-        insere_registro();
+        processa_comando_insere_registro(raiz);
         break;
       case CONSULTA_SIMPLES:
-        consulta_simples();
+        processa_comando_consulta_simples(raiz);
         break;
       case CONSULTA_POR_FAIXA_DE_NOMES_DE_AUTORES:
-        consulta_por_faixa_de_nomes_de_autores();
+        processa_comando_consulta_por_faixa_de_nomes_de_autores(raiz);
         break;
       case CONSULTA_POR_FAIXA_DE_ANOS:
-        consulta_por_faixa_de_anos();
+        processa_comando_consulta_por_faixa_de_anos(raiz);
         break;
       case CONSULTA_POR_FAIXA_DE_NOMES_DE_AUTORES_E_ANOS:
-        consulta_por_faixa_de_nomes_de_autores_e_anos();
+        processa_comando_consulta_por_faixa_de_nomes_de_autores_e_anos(raiz);
         break;
       case IMPRIME_INDICE_DA_ARVORE:
-        imprime_indice_da_arvore();
+        processa_comando_imprime_indice_da_arvore(raiz);
         break;
       case IMPRIME_PAGINA:
-        imprime_pagina();
+        processa_comando_imprime_pagina(raiz);
         break;
       case TERMINO_DA_SEQUENCIA_DE_COMANDOS:
         return;
@@ -71,23 +72,31 @@ void processa_comandos() {
   }
 }
 
-void prepara_arvore() {
-  arvore = (Arvore*) malloc(sizeof(Arvore));
-  arvore->qtdNos = 0;
-  arvore->raiz = cria_no_vazio(TIPO_NO_AUTOR);
+No *prepara_arvore() {
+  No *raiz;
 
   FILE *arquivo;
   if (arquivo = fopen(NOME_ARQUIVO, "r")) {
-    estrutura_arvore_atraves_de_arquivo(arquivo);
+    raiz = estrutura_arvore_atraves_de_arquivo(arquivo);
     fclose(arquivo);
   }
   else {
-    inicializa_arvore_e_arquivo_com_entradas();
+    raiz = inicializa_arvore_e_arquivo_com_entradas();
   }
+
+  printf("%sIE %d ID %d\n", raiz->autor, raiz->indicePaginaEsquerda, raiz->indicePaginaDireita);
+  printf("%u\nIE %d ID %d\n", raiz->noFilhoEsquerdo->ano, raiz->noFilhoEsquerdo->indicePaginaEsquerda, raiz->noFilhoEsquerdo->indicePaginaDireita);
+  printf("%u\nIE %d ID %d\n", raiz->noFilhoDireito->ano, raiz->noFilhoDireito->indicePaginaEsquerda, raiz->noFilhoDireito->indicePaginaDireita);
+  printf("%sIE %d ID %d\n", raiz->noFilhoEsquerdo->noFilhoEsquerdo->autor, raiz->noFilhoEsquerdo->noFilhoEsquerdo->indicePaginaEsquerda, raiz->noFilhoEsquerdo->noFilhoEsquerdo->indicePaginaDireita);
+  printf("%sIE %d ID %d\n", raiz->noFilhoDireito->noFilhoEsquerdo->autor, raiz->noFilhoDireito->noFilhoEsquerdo->indicePaginaEsquerda, raiz->noFilhoDireito->noFilhoEsquerdo->indicePaginaDireita);
+  printf("%sIE %d ID %d\n", raiz->noFilhoDireito->noFilhoDireito->autor, raiz->noFilhoDireito->noFilhoDireito->indicePaginaEsquerda, raiz->noFilhoDireito->noFilhoDireito->indicePaginaDireita);
+  printf("%u\nIE %d ID %d\n", raiz->noFilhoEsquerdo->noFilhoEsquerdo->noFilhoDireito->ano, raiz->noFilhoEsquerdo->noFilhoEsquerdo->noFilhoDireito->indicePaginaEsquerda, raiz->noFilhoEsquerdo->noFilhoEsquerdo->noFilhoDireito->indicePaginaDireita);
+
+  return raiz;
 }
 
-void inicializa_arvore_e_arquivo_com_entradas() {
-  
+No *inicializa_arvore_e_arquivo_com_entradas() {
+  No *raiz = cria_no_vazio(TIPO_NO_AUTOR);
   CabecalhoArquivo cabecalhoArquivo;
   scanf("%u", &cabecalhoArquivo.qtdNos);
   cabecalhoArquivo.qtdPaginas = cabecalhoArquivo.qtdNos + 1;
@@ -98,7 +107,7 @@ void inicializa_arvore_e_arquivo_com_entradas() {
   for (unsigned int i = 0; i < cabecalhoArquivo.qtdNos; i++) {
     Obra *obra = le_obra_da_entrada();
 
-    cria_no_e_insere_na_arvore(arvore->raiz, obra);
+    cria_no_e_insere_na_arvore(raiz, obra);
     fwrite(obra, sizeof(Obra), 1, arquivo);
   }
 
@@ -109,18 +118,10 @@ void inicializa_arvore_e_arquivo_com_entradas() {
   fclose(arquivo);
 
   int indice = 0;
-  adiciona_indices_das_paginas_na_arvore(arvore->raiz, &indice);
+  adiciona_indices_das_paginas_na_arvore(raiz, &indice);
 
-  // printf("%sIE %d ID %d\n", arvore->raiz->autor, arvore->raiz->indicePaginaEsquerda, arvore->raiz->indicePaginaDireita);
-  // printf("%u\nIE %d ID %d\n", arvore->raiz->noFilhoEsquerdo->ano, arvore->raiz->noFilhoEsquerdo->indicePaginaEsquerda, arvore->raiz->noFilhoEsquerdo->indicePaginaDireita);
-  // printf("%u\nIE %d ID %d\n", arvore->raiz->noFilhoDireito->ano, arvore->raiz->noFilhoDireito->indicePaginaEsquerda, arvore->raiz->noFilhoDireito->indicePaginaDireita);
-  // printf("%sIE %d ID %d\n", arvore->raiz->noFilhoEsquerdo->noFilhoEsquerdo->autor, arvore->raiz->noFilhoEsquerdo->noFilhoEsquerdo->indicePaginaEsquerda, arvore->raiz->noFilhoEsquerdo->noFilhoEsquerdo->indicePaginaDireita);
-  // printf("%sIE %d ID %d\n", arvore->raiz->noFilhoDireito->noFilhoEsquerdo->autor, arvore->raiz->noFilhoDireito->noFilhoEsquerdo->indicePaginaEsquerda, arvore->raiz->noFilhoDireito->noFilhoEsquerdo->indicePaginaDireita);
-  // printf("%sIE %d ID %d\n", arvore->raiz->noFilhoDireito->noFilhoDireito->autor, arvore->raiz->noFilhoDireito->noFilhoDireito->indicePaginaEsquerda, arvore->raiz->noFilhoDireito->noFilhoDireito->indicePaginaDireita);
-  // printf("%u\nIE %d ID %d\n", arvore->raiz->noFilhoEsquerdo->noFilhoEsquerdo->noFilhoDireito->ano, arvore->raiz->noFilhoEsquerdo->noFilhoEsquerdo->noFilhoDireito->indicePaginaEsquerda, arvore->raiz->noFilhoEsquerdo->noFilhoEsquerdo->noFilhoDireito->indicePaginaDireita);
-
-  
   printf("arvore k-d gerada\n");
+  return raiz;
 }
 
 void adiciona_indices_das_paginas_na_arvore(No *no, unsigned int *indice) {
@@ -141,7 +142,6 @@ void adiciona_indices_das_paginas_na_arvore(No *no, unsigned int *indice) {
 
 void cria_no_e_insere_na_arvore(No *no, Obra *obra) {
   if (no_esta_vazio(no)) {
-    arvore->qtdNos++;
     if (no->tipo == TIPO_NO_AUTOR) {
       strcpy(no->autor, obra->autor);
     }
@@ -181,41 +181,52 @@ void cria_no_e_insere_na_arvore(No *no, Obra *obra) {
   }
 }
 
-void estrutura_arvore_atraves_de_arquivo(FILE *arquivo) {
-  teste_imprimir_obras();
+No *estrutura_arvore_atraves_de_arquivo(FILE *arquivo) {
+  No *raiz = cria_no_vazio(TIPO_NO_AUTOR);
+  CabecalhoArquivo cabecalhoArquivo;
+  fseek(arquivo, 0, SEEK_SET);
+  fread(&cabecalhoArquivo, sizeof(CabecalhoArquivo), 1, arquivo);
+
+  for(int i = 0; i < cabecalhoArquivo.qtdNos; i++) {
+    Obra obra;
+    fread(&obra, sizeof(Obra), 1, arquivo);
+    cria_no_e_insere_na_arvore(raiz, &obra);
+  }
+
+  int indice = 0;
+  adiciona_indices_das_paginas_na_arvore(raiz, &indice);
+
+  return raiz;
 }
 
-void insere_registro() {
+void processa_comando_insere_registro(No *raiz) {
   printf("insere_registro");
 }
 
-void consulta_simples() {
+void processa_comando_consulta_simples(No *raiz) {
   printf("consulta_simples");
 }
 
-void consulta_por_faixa_de_nomes_de_autores() {
+void processa_comando_consulta_por_faixa_de_nomes_de_autores(No *raiz) {
   printf("consulta_por_faixa_de_nomes_de_autores");
 }
 
-void consulta_por_faixa_de_anos() {
+void processa_comando_consulta_por_faixa_de_anos(No *raiz) {
   printf("consulta_por_faixa_de_anos");
 }
 
-void consulta_por_faixa_de_nomes_de_autores_e_anos() {
+void processa_comando_consulta_por_faixa_de_nomes_de_autores_e_anos(No *raiz) {
   printf("consulta_por_faixa_de_nomes_de_autores_e_anos");
 }
 
-void imprime_indice_da_arvore() {
+void processa_comando_imprime_indice_da_arvore(No *raiz) {
   printf("imprime_indice_da_arvore");
 }
 
-void imprime_pagina() {
+void processa_comando_imprime_pagina(No *raiz) {
   printf("imprime_pagina");
 }
 
-void termino_da_sequencia_de_comandos() {
-  printf("termino_da_sequencia_de_comandos");
-}
 
 FILE *abre_arquivo(char *nomeArquivo, char *modo){
   FILE *arquivo;
@@ -241,12 +252,6 @@ No *cria_no_vazio(TipoNo tipo) {
     no->ano = 0;
   }
   return no;
-}
-
-void adiciona_pagina_no_arquivo(Pagina *pagina, unsigned int indice) {
-  FILE *arquivo = abre_arquivo(NOME_ARQUIVO, "r+");
-  fseek(arquivo, indice * sizeof(Pagina), SEEK_SET);
-  fwrite(pagina, sizeof(Pagina), 1, arquivo);
 }
 
 bool no_esta_vazio(No *no) {
