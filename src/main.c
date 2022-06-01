@@ -278,7 +278,23 @@ void processa_comando_imprime_indice_da_arvore(No *raiz) {
 }
 
 void processa_comando_imprime_pagina(No *raiz) {
-  printf("imprime_pagina");
+  int indicePagina;
+  scanf("%d", &indicePagina);
+  Pagina pagina;
+  FILE *arquivo = abre_arquivo(NOME_ARQUIVO, "r");
+  printf("pagina: %d\n", indicePagina);
+  do {
+    pagina = le_pagina_do_arquivo(arquivo, indicePagina);
+    for (int j = 0; j < NREGSPORPAGINA; j++) {
+      if (pagina.registros[j].ocupado) {
+        printf("%s", pagina.registros[j].obra.autor);
+        printf("%s", pagina.registros[j].obra.nome);
+        printf("%u\n", pagina.registros[j].obra.ano);
+        printf("%s\n", pagina.registros[j].obra.arquivo);
+      }
+    }
+    indicePagina = pagina.proxima;
+  } while (pagina.proxima != -1);
 }
 
 void insere_obra_na_pagina(FILE *arquivo, int indicePagina, Obra *obra) {
