@@ -126,14 +126,12 @@ No *inicializa_arvore_e_arquivo_com_entradas() {
 
 void adiciona_indices_das_paginas_na_arvore(No *no, unsigned int *indice) {
   if (no->noFilhoEsquerdo == NULL) {
-    no->indicePaginaEsquerda = *indice;
-    (*indice)++;
+    no->indicePaginaEsquerda = (*indice)++;
   } else {
     adiciona_indices_das_paginas_na_arvore(no->noFilhoEsquerdo, indice);
   }
   if (no->noFilhoDireito == NULL) {
-    no->indicePaginaDireita = *indice;
-    (*indice)++;
+    no->indicePaginaDireita = (*indice)++;
   }
   else {
     adiciona_indices_das_paginas_na_arvore(no->noFilhoDireito, indice);
