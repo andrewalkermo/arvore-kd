@@ -19,6 +19,7 @@ typedef struct Obra Obra;
 typedef struct Registro Registro;
 typedef struct Pagina Pagina;
 typedef struct CabecalhoArquivo CabecalhoArquivo;
+typedef struct Consulta Consulta;
 
 typedef enum TipoNo TipoNo;
 
@@ -60,4 +61,12 @@ struct Pagina{
 struct CabecalhoArquivo{
   unsigned int qtdNos;
   unsigned int qtdPaginas;
+};
+
+struct Consulta{
+  char tipo;
+  char nomeInicial[TAMANHO_NOME];
+  char nomeFinal[TAMANHO_NOME];
+  unsigned int anoInicial;
+  unsigned int anoFinal;
 };

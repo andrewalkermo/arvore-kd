@@ -22,11 +22,15 @@ void insere_obra_na_pagina(FILE *arquivo, int indicePagina, Obra *obra);
 void escreve_pagina_no_arquivo(FILE *arquivo, int indicePagina, Pagina pagina);
 void atualiza_cabecalho_do_arquivo(FILE *arquivo, CabecalhoArquivo cabecalho);
 
+void imprime_registros_da_pagina(int indicePagina, Consulta *consulta, int *qtdEncontrados);
+void imprime_obra_por_autor(No *no, char *autor, int *qtdEncontrados);
+
 No *prepara_arvore();
 No *inicializa_arvore_e_arquivo_com_entradas();
 No *estrutura_arvore_atraves_de_arquivo(FILE *arquivo);
 No *cria_no_vazio(TipoNo tipo);
 
+bool compara_obra_com_consulta(Obra *obra, Consulta *consulta);
 bool no_esta_vazio(No *no);
 Obra *le_obra_da_entrada();
 Obra cria_obra_vazia();
@@ -249,7 +253,14 @@ void processa_comando_insere_registro(No *raiz) {
 }
 
 void processa_comando_consulta_simples(No *raiz) {
-  printf("consulta_simples");
+  char autor[TAMANHO_NOME];
+  getchar();
+  fgets(autor, TAMANHO_NOME, stdin);
+  int encontrados = 0;
+  imprime_obra_por_autor(raiz, autor, &encontrados);
+  if (encontrados == 0) {
+    printf("nao foi encontrado registro com nome: %s", autor);
+  }
 }
 
 void processa_comando_consulta_por_faixa_de_nomes_de_autores(No *raiz) {
@@ -271,9 +282,9 @@ void processa_comando_imprime_indice_da_arvore(No *raiz) {
 void processa_comando_imprime_pagina(No *raiz) {
   int indicePagina;
   scanf("%d", &indicePagina);
+  printf("pagina: %d\n", indicePagina);
   Pagina pagina;
   FILE *arquivo = abre_arquivo(NOME_ARQUIVO, "r");
-  printf("pagina: %d\n", indicePagina);
   do {
     pagina = le_pagina_do_arquivo(arquivo, indicePagina);
     for (int j = 0; j < NREGSPORPAGINA; j++) {
@@ -286,6 +297,55 @@ void processa_comando_imprime_pagina(No *raiz) {
     }
     indicePagina = pagina.proxima;
   } while (pagina.proxima != -1);
+  fclose(arquivo);
+}
+
+void imprime_registros_da_pagina(int indicePagina, Consulta *consulta, int *qtdEncontrados) {
+  Pagina pagina;
+  FILE *arquivo = abre_arquivo(NOME_ARQUIVO, "r");
+  do {
+    pagina = le_pagina_do_arquivo(arquivo, indicePagina);
+    for (int j = 0; j < NREGSPORPAGINA; j++) {
+      if (pagina.registros[j].ocupado && compara_obra_com_consulta(&pagina.registros[j].obra, consulta)) {
+        (*qtdEncontrados)++;
+        printf("nome: %s", pagina.registros[j].obra.autor);
+        printf("%s", pagina.registros[j].obra.nome);
+        printf("%u\n", pagina.registros[j].obra.ano);
+        printf("%s\n", pagina.registros[j].obra.arquivo);
+      }
+    }
+    indicePagina = pagina.proxima;
+  } while (pagina.proxima != -1);
+  fclose(arquivo);
+}
+
+bool compara_obra_com_consulta(Obra *obra, Consulta *consulta) {
+  if (
+    (
+      consulta->tipo == CONSULTA_SIMPLES 
+      && strcmp(obra->autor, consulta->nomeInicial) == 0
+    )
+    || (
+      consulta->tipo == CONSULTA_POR_FAIXA_DE_NOMES_DE_AUTORES
+      && strcmp(obra->autor, consulta->nomeInicial) >= 0
+      && strcmp(obra->autor, consulta->nomeFinal) <= 0
+    )
+    || (
+      consulta->tipo == CONSULTA_POR_FAIXA_DE_ANOS
+      && obra->ano >= consulta->anoInicial
+      && obra->ano <= consulta->anoFinal
+    )
+    || (
+      consulta->tipo == CONSULTA_POR_FAIXA_DE_NOMES_DE_AUTORES_E_ANOS
+      && strcmp(obra->autor, consulta->nomeInicial) >= 0
+      && strcmp(obra->autor, consulta->nomeFinal) <= 0
+      && obra->ano >= consulta->anoInicial
+      && obra->ano <= consulta->anoFinal
+    )
+  ) {
+    return true;
+  }
+  return false;
 }
 
 void insere_obra_na_pagina(FILE *arquivo, int indicePagina, Obra *obra) {
@@ -443,4 +503,43 @@ void teste_imprimir_obras_que_criam_nos_no_arquivo() {
     printf("LOG - %s\n\n", obra.arquivo);
   }
   fclose(arquivo);
+}
+
+void imprime_obra_por_autor(No *no, char *autor, int *qtdEncontrados) {
+  Consulta consulta;
+  consulta.tipo = CONSULTA_SIMPLES;
+  strcpy(consulta.nomeInicial, autor);
+
+  if (no->tipo == TIPO_NO_AUTOR) {
+    if (strcmp(autor, no->autor) <= 0) {
+      if (no->noFilhoEsquerdo == NULL) {
+        imprime_registros_da_pagina(no->indicePaginaEsquerda, &consulta, qtdEncontrados);
+      }
+      else {
+        imprime_obra_por_autor(no->noFilhoEsquerdo, autor, qtdEncontrados);
+      }
+    }
+    else {
+      if (no->noFilhoDireito == NULL) {
+        imprime_registros_da_pagina(no->indicePaginaDireita, &consulta, qtdEncontrados);
+      }
+      else {
+        imprime_obra_por_autor(no->noFilhoDireito, autor, qtdEncontrados);
+      }
+    }
+  }
+  else {
+    if (no->noFilhoEsquerdo == NULL) {
+      imprime_registros_da_pagina(no->indicePaginaEsquerda, &consulta, qtdEncontrados);
+    }
+    else {
+      imprime_obra_por_autor(no->noFilhoEsquerdo, autor, qtdEncontrados);
+    }
+    if (no->noFilhoDireito == NULL) {
+      imprime_registros_da_pagina(no->indicePaginaDireita, &consulta, qtdEncontrados);
+    }
+    else {
+      imprime_obra_por_autor(no->noFilhoDireito, autor, qtdEncontrados);
+    }
+  }
 }
