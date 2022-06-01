@@ -79,8 +79,8 @@ void processa_comandos(No *raiz) {
 
 No *prepara_arvore() {
   No *raiz;
-
   FILE *arquivo;
+
   if (arquivo = fopen(NOME_ARQUIVO, "r")) {
     raiz = estrutura_arvore_atraves_de_arquivo(arquivo);
     fclose(arquivo);
@@ -88,14 +88,6 @@ No *prepara_arvore() {
   else {
     raiz = inicializa_arvore_e_arquivo_com_entradas();
   }
-
-  // printf("LOG - %sIE %d ID %d\n", raiz->autor, raiz->indicePaginaEsquerda, raiz->indicePaginaDireita);
-  // printf("LOG - %u\nIE %d ID %d\n", raiz->noFilhoEsquerdo->ano, raiz->noFilhoEsquerdo->indicePaginaEsquerda, raiz->noFilhoEsquerdo->indicePaginaDireita);
-  // printf("LOG - %u\nIE %d ID %d\n", raiz->noFilhoDireito->ano, raiz->noFilhoDireito->indicePaginaEsquerda, raiz->noFilhoDireito->indicePaginaDireita);
-  // printf("LOG - %sIE %d ID %d\n", raiz->noFilhoEsquerdo->noFilhoEsquerdo->autor, raiz->noFilhoEsquerdo->noFilhoEsquerdo->indicePaginaEsquerda, raiz->noFilhoEsquerdo->noFilhoEsquerdo->indicePaginaDireita);
-  // printf("LOG - %sIE %d ID %d\n", raiz->noFilhoDireito->noFilhoEsquerdo->autor, raiz->noFilhoDireito->noFilhoEsquerdo->indicePaginaEsquerda, raiz->noFilhoDireito->noFilhoEsquerdo->indicePaginaDireita);
-  // printf("LOG - %sIE %d ID %d\n", raiz->noFilhoDireito->noFilhoDireito->autor, raiz->noFilhoDireito->noFilhoDireito->indicePaginaEsquerda, raiz->noFilhoDireito->noFilhoDireito->indicePaginaDireita);
-  // printf("LOG - %u\nIE %d ID %d\n", raiz->noFilhoEsquerdo->noFilhoEsquerdo->noFilhoDireito->ano, raiz->noFilhoEsquerdo->noFilhoEsquerdo->noFilhoDireito->indicePaginaEsquerda, raiz->noFilhoEsquerdo->noFilhoEsquerdo->noFilhoDireito->indicePaginaDireita);
 
   return raiz;
 }
@@ -111,7 +103,6 @@ No *inicializa_arvore_e_arquivo_com_entradas() {
 
   for (unsigned int i = 0; i < cabecalhoArquivo.qtdNos; i++) {
     Obra *obra = le_obra_da_entrada();
-
     cria_no_e_insere_na_arvore(raiz, obra);
     fwrite(obra, sizeof(Obra), 1, arquivo);
   }
