@@ -69,4 +69,5 @@ struct Consulta{
   char nomeFinal[TAMANHO_NOME];
   unsigned int anoInicial;
   unsigned int anoFinal;
+  unsigned int qtdResultados;
 };
