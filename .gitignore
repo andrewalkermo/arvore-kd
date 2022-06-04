@@ -3,5 +3,4 @@
 main
 src/main
 *.dat
-teste
-teste.c
+teste.*

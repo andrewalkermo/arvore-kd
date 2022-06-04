@@ -280,7 +280,16 @@ void processa_comando_consulta_por_faixa_de_nomes_de_autores(No *raiz) {
 }
 
 void processa_comando_consulta_por_faixa_de_anos(No *raiz) {
-  printf("consulta_por_faixa_de_anos");
+  Consulta consulta;
+  scanf("%u", &consulta.anoInicial);
+  scanf("%u", &consulta.anoFinal);
+  consulta.qtdResultados = 0;
+  consulta.tipo = CONSULTA_POR_FAIXA_DE_ANOS;
+
+  imprime_registros_que_correspondem_a_consulta(raiz, &consulta);
+  if (consulta.qtdResultados == 0) {
+    printf("nao foi encontrado registro com ano entre: %d e %d\n", consulta.anoInicial, consulta.anoFinal);
+  }
 }
 
 void processa_comando_consulta_por_faixa_de_nomes_de_autores_e_anos(No *raiz) {
@@ -541,10 +550,24 @@ int compara_no_com_consulta(No *no, Consulta *consulta) {
         return -1;
       }
     }
+    else if (consulta->tipo == CONSULTA_POR_FAIXA_DE_ANOS) {
+      return 0;
+    }
   }
   else {
     if (consulta->tipo == CONSULTA_SIMPLES || consulta->tipo == CONSULTA_POR_FAIXA_DE_NOMES_DE_AUTORES) {
       return 0;
+    }
+    else if (consulta->tipo == CONSULTA_POR_FAIXA_DE_ANOS) {
+      if (no->ano >= consulta->anoInicial && no->ano <= consulta->anoFinal) {
+        return 0;
+      }
+      else if (no->ano < consulta->anoInicial) {
+        return 1;
+      }
+      else {
+        return -1;
+      }
     }
   }
 }
