@@ -43,10 +43,6 @@ FILE *abre_arquivo(char *nomeArquivo, char *modo);
 CabecalhoArquivo le_cabecalho_do_arquivo(FILE *arquivo);
 char *le_nome_da_entrada();
 
-void teste_imprimir_paginas();
-void teste_imprimir_obras_que_criam_nos_no_arquivo();
-
-
 int main() {
   No *raiz = prepara_arvore();
   processa_comandos(raiz);
@@ -491,50 +487,6 @@ Obra cria_obra_vazia() {
   obra.ano = 0;
   obra.arquivo[0] = '\0';
   return obra;
-}
-
-void teste_imprimir_paginas() {
-
-  FILE *arquivo = abre_arquivo(NOME_ARQUIVO, "r");
-
-  CabecalhoArquivo cabecalho = le_cabecalho_do_arquivo(arquivo);
-  printf("LOG - Cabecalho:\n");
-  printf("LOG - qtdNos: %u\n", cabecalho.qtdNos);
-  printf("LOG - qtdPaginas: %u\n", cabecalho.qtdPaginas);
-  // return;
-  for (unsigned int i = 0; i < cabecalho.qtdNos + 1; i++) {
-    printf("LOG - Pagina %u:\n", i);
-    Pagina pagina;
-    int indicePagina = i;
-    do {
-      pagina = le_pagina_do_arquivo(arquivo, indicePagina);
-      for (int j = 0; j < NREGSPORPAGINA; j++) {
-        if (pagina.registros[j].ocupado) {
-          printf("LOG - %s\n", pagina.registros[j].obra.autor);
-          printf("LOG - %s\n", pagina.registros[j].obra.nome);
-          printf("LOG - %u\n", pagina.registros[j].obra.ano);
-          printf("LOG - %s\n\n", pagina.registros[j].obra.arquivo);
-        }
-      }
-      indicePagina = pagina.proxima;
-    } while (pagina.proxima != -1);
-  }
-  fclose(arquivo);
-}
-
-void teste_imprimir_obras_que_criam_nos_no_arquivo() {
-
-  FILE *arquivo = abre_arquivo(NOME_ARQUIVO, "r");
-  CabecalhoArquivo cabecalho = le_cabecalho_do_arquivo(arquivo);
-  for (unsigned int i = 0; i < cabecalho.qtdNos; i++) {
-    Obra obra;
-    fread(&obra, sizeof(Obra), 1, arquivo);
-    printf("LOG - %s\n", obra.autor);
-    printf("LOG - %s\n", obra.nome);
-    printf("LOG - %u\n", obra.ano);
-    printf("LOG - %s\n\n", obra.arquivo);
-  }
-  fclose(arquivo);
 }
 
 // compara no com a consulta e retorna e indica qual no deve ser seguido
