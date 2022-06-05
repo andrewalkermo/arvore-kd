@@ -80,7 +80,7 @@ void processa_comandos(No *raiz) {
   }
 }
 
-// verifica se já existe o arquivo de registros, caso já exista, 
+// verifica se ja existe o arquivo de registros, caso ja exista, 
 // inicializa a arvore com os registros do arquivo como indice da arvore e salva a arvore no arquivo
 // se nao existir cria o arquivo pra salvar os registros que serão utilizados como indice da arvore,
 // inicializa arvore e salva a arvore no arquivo
@@ -101,7 +101,7 @@ No *prepara_arvore() {
 }
 
 
-// lê a quantidade de registros a serem inseridos para a criação da arvore, cria o arquivo
+// le a quantidade de registros a serem inseridos para a criacao da arvore, cria o arquivo
 //  e salva no cabeçalho do arquivo a quantidade de registros
 // inicializa a arvore com os indices e as paginas com registros vazios
 No *inicializa_arvore_e_arquivo_com_entradas() {
@@ -110,7 +110,7 @@ No *inicializa_arvore_e_arquivo_com_entradas() {
   scanf("%u", &cabecalhoArquivo.qtdNos);
   cabecalhoArquivo.qtdPaginas = cabecalhoArquivo.qtdNos + 1;
 
-  // criação do arquivo e escrita do cabeçalho com a quantidade de nós
+  // criacao do arquivo e escrita do cabeçalho com a quantidade de nós
   FILE *arquivo = abre_arquivo(NOME_ARQUIVO, "w+");
   fwrite(&cabecalhoArquivo, sizeof(CabecalhoArquivo), 1, arquivo);
 
@@ -121,7 +121,7 @@ No *inicializa_arvore_e_arquivo_com_entradas() {
     fwrite(obra, sizeof(Obra), 1, arquivo);
   }
 
-  // loop que cria e seta as páginas com a quantidade máxima suportada de registros em cada página
+  // loop que cria e seta as páginas com a quantidade maxima suportada de registros em cada página
   // as paginas sao setadas com registros vazios
   for (unsigned int i = 0; i < cabecalhoArquivo.qtdPaginas; i++) {
     Pagina pagina = cria_pagina_vazia();
@@ -158,8 +158,8 @@ void adiciona_indices_das_paginas_na_arvore(No *no, unsigned int *indice) {
   }
 }
 // primeiro verifica o tipo de no a ser iserido
-// caso o tipo de no seja autor, faz a verificação com o auxilio da função srtcmp que compara a srings em ordem alfabética,
-// se o nome do autor da obra é menor ou igual ao nome do autor do nó a inserção ocorre à esquerda, e caso seja maior, ocorre a direita
+// caso o tipo de no seja autor, faz a verificação com o auxilio da função srtcmp que compara a srings em ordem alfabetica,
+// se o nome do autor da obra é menor ou igual ao nome do autor do nó a inserção ocorre a esquerda, e caso seja maior, ocorre a direita
 // caso o tipo de de no seja do tipo ano, faz a comparação entre inteiros, caso o ano da obra seja menor ou igual ao ano do nó a inserção ocorre à esquerda e caso seja maior, ocorre a direita
 // a insercao ocorre de forma recursiva, percorrendo a arvore ate que seja encontrado o nó esquerdo ou direto que seja NULL
 void cria_no_e_insere_na_arvore(No *no, Obra *obra) {
@@ -341,6 +341,8 @@ void processa_comando_imprime_indice_da_arvore(No *raiz) {
 }
 
 //faz a leitura do conteudo da pagina no arquivo e imprime todas as obras
+// caso tenha referencia para outra pagina, o conteudo dessa pagina tambem sera impressa
+// ate que acabem as paginas referenciadas
 void processa_comando_imprime_pagina(No *raiz) {
   int indicePagina;
   scanf("%d", &indicePagina);
@@ -388,7 +390,7 @@ void imprime_registros_da_pagina(int indicePagina, Consulta *consulta) {
 // Na consulta simples, retorna true se houver registros na árvore com o valor de nome indicado
 // Na consulta por faixa de nome de autores e verificado se o nome do autor for maior ou igual ao nome do autor nomeInicial e menor ao nome do autor nomeFinal, considerando-se a ordem alfabetica
 // Na consulta por faixa de nome de ano e verificado se o ano da obra é maior ou igual ao nome do ano anoInicial e menor ao ano anoFinal 
-// Na consulta por faixa de nome e de autores se a obra se encontra em ambos os intervalos das consultas descritas acima
+// Na consulta por faixa de nome e de autores e verificado se a obra se encontra em ambos os intervalos das consultas descritas acima
 
 bool compara_obra_com_consulta(Obra *obra, Consulta *consulta) {
   if (
@@ -457,6 +459,7 @@ void escreve_pagina_no_arquivo(FILE *arquivo, int indicePagina, Pagina pagina) {
   fwrite(&pagina, sizeof(Pagina), 1, arquivo);
 }
 
+// le a pagina e a retorna
 Pagina le_pagina_do_arquivo(FILE *arquivo, int indicePagina) {
   CabecalhoArquivo cabecalho = le_cabecalho_do_arquivo(arquivo);
   long int posicao = 1 * sizeof(CabecalhoArquivo) + cabecalho.qtdNos * sizeof(Obra) + indicePagina * sizeof(Pagina);
@@ -507,6 +510,7 @@ Obra *le_obra_da_entrada() {
   return obra;
 }
 
+// cria a pagina e inicializa com registros vazios a quantidade maxima de registros
 Pagina cria_pagina_vazia() {
   Pagina pagina;
   pagina.qtdRegistros = 0;
@@ -581,7 +585,7 @@ int compara_no_com_consulta(No *no, Consulta *consulta) {
 }
 
 void imprime_registros_que_correspondem_a_consulta(No *no, Consulta *consulta) {
-
+  // verifica se o no e menor igual ou maior ao valor da consulta pra definir em qual direcao deve-se percorrer a arvore
   int resultado = compara_no_com_consulta(no, consulta);
   if (resultado == -1) {
     if (no->noFilhoEsquerdo == NULL) {
@@ -641,6 +645,7 @@ void imprime_indice_da_arvore(No *no) {
     } else {
       printf("fesq: %u ", no->noFilhoEsquerdo->ano);
     }
+    // verifica se e um no folha
     if (no->noFilhoDireito == NULL) {
       printf("fdir: pagina");
     } else {
@@ -650,6 +655,7 @@ void imprime_indice_da_arvore(No *no) {
   }
   else {
     printf("ano: %u ", no->ano);
+    // verifica se e um no folha
     if (no->noFilhoEsquerdo == NULL) {
       printf("fesq: pagina ");
     } else {
