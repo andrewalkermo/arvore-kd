@@ -24,6 +24,7 @@ void atualiza_cabecalho_do_arquivo(FILE *arquivo, CabecalhoArquivo cabecalho);
 
 void imprime_registros_da_pagina(int indicePagina, Consulta *consulta);
 void imprime_registros_que_correspondem_a_consulta(No *no, Consulta *consulta);
+void imprime_indice_da_arvore(No *no);
 
 No *prepara_arvore();
 No *inicializa_arvore_e_arquivo_com_entradas();
@@ -308,7 +309,7 @@ void processa_comando_consulta_por_faixa_de_nomes_de_autores_e_anos(No *raiz) {
 }
 
 void processa_comando_imprime_indice_da_arvore(No *raiz) {
-  printf("imprime_indice_da_arvore");
+  imprime_indice_da_arvore(raiz);
 }
 
 void processa_comando_imprime_pagina(No *raiz) {
@@ -632,4 +633,41 @@ char *le_nome_da_entrada() {
   }
 
   return nome;
+}
+
+void imprime_indice_da_arvore(No *no) {
+  if (no->tipo == TIPO_NO_AUTOR) {
+    printf("nome: %s ", no->autor);
+    if (no->noFilhoEsquerdo == NULL) {
+      printf("fesq: pagina ");
+    } else {
+      printf("fesq: %u ", no->noFilhoEsquerdo->ano);
+    }
+    if (no->noFilhoDireito == NULL) {
+      printf("fdir: pagina");
+    } else {
+      printf("fdir: %u", no->noFilhoDireito->ano);
+    }
+    printf("\n");
+  }
+  else {
+    printf("ano: %u ", no->ano);
+    if (no->noFilhoEsquerdo == NULL) {
+      printf("fesq: pagina ");
+    } else {
+      printf("fesq: %s ", no->noFilhoEsquerdo->autor);
+    }
+    if (no->noFilhoDireito == NULL) {
+      printf("fdir: pagina");
+    } else {
+      printf("fdir: %s", no->noFilhoDireito->autor);
+    }
+    printf("\n");
+  }
+  if (no->noFilhoEsquerdo != NULL) {
+    imprime_indice_da_arvore(no->noFilhoEsquerdo);
+  }
+  if (no->noFilhoDireito != NULL) {
+    imprime_indice_da_arvore(no->noFilhoDireito);
+  }
 }
