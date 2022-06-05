@@ -14,15 +14,15 @@ void processa_comando_consulta_por_faixa_de_nomes_de_autores_e_anos(No *raiz);
 void processa_comando_imprime_indice_da_arvore(No *raiz);
 void processa_comando_imprime_pagina(No *raiz);
 
-void cria_no_e_insere_na_arvore(No *no, Obra *obra);
 void adiciona_indices_das_paginas_na_arvore(No *no, unsigned int *indice);
-
+void cria_no_e_insere_na_arvore(No *no, Obra *obra);
 void insere_obra_no_arquivo(No *no, FILE *arquivo, Obra *obra);
-void insere_obra_na_pagina(FILE *arquivo, int indicePagina, Obra *obra);
-void escreve_pagina_no_arquivo(FILE *arquivo, int indicePagina, Pagina pagina);
-void atualiza_cabecalho_do_arquivo(FILE *arquivo, CabecalhoArquivo cabecalho);
-
 void imprime_registros_da_pagina(int indicePagina, Consulta *consulta, int *qtdEncontrados);
+void insere_obra_na_pagina(FILE *arquivo, int indicePagina, Obra *obra);
+void atualiza_cabecalho_do_arquivo(FILE *arquivo, CabecalhoArquivo cabecalho);
+void escreve_pagina_no_arquivo(FILE *arquivo, int indicePagina, Pagina pagina);
+void escreve_registro_no_arquivo(FILE *arquivo, int indicePagina, int indiceRegistro, Registro registro);
+void insere_pagina_vazia_no_final_do_arquivo(FILE *arquivo);
 void imprime_obra_por_autor(No *no, char *autor, int *qtdEncontrados);
 
 No *prepara_arvore();
@@ -30,19 +30,20 @@ No *inicializa_arvore_e_arquivo_com_entradas();
 No *estrutura_arvore_atraves_de_arquivo(FILE *arquivo);
 No *cria_no_vazio(TipoNo tipo);
 
+CabecalhoArquivo le_cabecalho_do_arquivo(FILE *arquivo);
+Pagina cria_pagina_vazia();
+Pagina le_pagina_do_arquivo(FILE *arquivo, int indicePagina);
+Registro cria_registro_vazio();
+Registro le_registro_do_arquivo(FILE *arquivo, int indicePagina, int indiceRegistro);
 bool compara_obra_com_consulta(Obra *obra, Consulta *consulta);
 bool no_esta_vazio(No *no);
 Obra *le_obra_da_entrada();
 Obra cria_obra_vazia();
-Pagina cria_pagina_vazia();
-Pagina le_pagina_do_arquivo(FILE *arquivo, int indicePagina);
-Registro cria_registro_vazio();
 FILE *abre_arquivo(char *nomeArquivo, char *modo);
-CabecalhoArquivo le_cabecalho_do_arquivo(FILE *arquivo);
+
 
 void teste_imprimir_paginas();
 void teste_imprimir_obras_que_criam_nos_no_arquivo();
-
 
 int main() {
   No *raiz = prepara_arvore();
@@ -100,7 +101,7 @@ No *inicializa_arvore_e_arquivo_com_entradas() {
   No *raiz = cria_no_vazio(TIPO_NO_AUTOR);
   CabecalhoArquivo cabecalhoArquivo;
   scanf("%u", &cabecalhoArquivo.qtdNos);
-  cabecalhoArquivo.qtdPaginas = cabecalhoArquivo.qtdNos + 1;
+  cabecalhoArquivo.qtdPaginas = 0;
 
   FILE *arquivo = abre_arquivo(NOME_ARQUIVO, "w+");
   fwrite(&cabecalhoArquivo, sizeof(CabecalhoArquivo), 1, arquivo);
@@ -111,14 +112,13 @@ No *inicializa_arvore_e_arquivo_com_entradas() {
     fwrite(obra, sizeof(Obra), 1, arquivo);
   }
 
-  for (unsigned int i = 0; i < cabecalhoArquivo.qtdPaginas; i++) {
-    Pagina pagina = cria_pagina_vazia();
-    fwrite(&pagina, sizeof(Pagina), 1, arquivo);
+  for (unsigned int i = 0; i < cabecalhoArquivo.qtdNos + 1; i++) {
+    insere_pagina_vazia_no_final_do_arquivo(arquivo);
   }
 
   int indice = 0;
   adiciona_indices_das_paginas_na_arvore(raiz, &indice);
-  
+
   for (unsigned int i = 0; i < cabecalhoArquivo.qtdNos; i++) {
     Obra obra;
     fseek(arquivo, sizeof(CabecalhoArquivo) + i * sizeof(Obra), SEEK_SET);
@@ -288,11 +288,12 @@ void processa_comando_imprime_pagina(No *raiz) {
   do {
     pagina = le_pagina_do_arquivo(arquivo, indicePagina);
     for (int j = 0; j < NREGSPORPAGINA; j++) {
-      if (pagina.registros[j].ocupado) {
-        printf("%s", pagina.registros[j].obra.autor);
-        printf("%s", pagina.registros[j].obra.nome);
-        printf("%u\n", pagina.registros[j].obra.ano);
-        printf("%s\n", pagina.registros[j].obra.arquivo);
+      Registro registro = le_registro_do_arquivo(arquivo, indicePagina, j);
+      if (registro.ocupado) {
+        printf("%s", registro.obra.autor);
+        printf("%s", registro.obra.nome);
+        printf("%u\n", registro.obra.ano);
+        printf("%s\n", registro.obra.arquivo);
       }
     }
     indicePagina = pagina.proxima;
@@ -303,19 +304,25 @@ void processa_comando_imprime_pagina(No *raiz) {
 void imprime_registros_da_pagina(int indicePagina, Consulta *consulta, int *qtdEncontrados) {
   Pagina pagina;
   FILE *arquivo = abre_arquivo(NOME_ARQUIVO, "r");
+
   do {
     pagina = le_pagina_do_arquivo(arquivo, indicePagina);
-    for (int j = 0; j < NREGSPORPAGINA; j++) {
-      if (pagina.registros[j].ocupado && compara_obra_com_consulta(&pagina.registros[j].obra, consulta)) {
+    for (int i = 0; i < NREGSPORPAGINA; i++) {
+      Registro registro = le_registro_do_arquivo(arquivo, indicePagina, i);
+      if (registro.ocupado && compara_obra_com_consulta(&registro.obra, consulta)) {
         (*qtdEncontrados)++;
-        printf("nome: %s", pagina.registros[j].obra.autor);
-        printf("%s", pagina.registros[j].obra.nome);
-        printf("%u\n", pagina.registros[j].obra.ano);
-        printf("%s\n", pagina.registros[j].obra.arquivo);
+        printf("nome: %s", registro.obra.autor);
+        printf("%s", registro.obra.nome);
+        printf("%u\n", registro.obra.ano);
+        printf("%s\n", registro.obra.arquivo);
       }
     }
+    // printf("LOG - pagina: %d\n", indicePagina);
+    // printf("LOG - proxima: %d\n", pagina.proxima);
+    // return;
     indicePagina = pagina.proxima;
   } while (pagina.proxima != -1);
+
   fclose(arquivo);
 }
 
@@ -352,22 +359,19 @@ void insere_obra_na_pagina(FILE *arquivo, int indicePagina, Obra *obra) {
 
   CabecalhoArquivo cabecalho = le_cabecalho_do_arquivo(arquivo);
   Pagina pagina = le_pagina_do_arquivo(arquivo, indicePagina);
-  
   while(pagina.proxima != -1) {
     indicePagina = pagina.proxima;
     pagina = le_pagina_do_arquivo(arquivo, indicePagina);
   }
-
-  pagina.registros[pagina.qtdRegistros].obra = *obra;
-  pagina.registros[pagina.qtdRegistros].ocupado = true;
+  Registro registro;
+  registro.ocupado = true;
+  registro.obra = *obra;
+  escreve_registro_no_arquivo(arquivo, indicePagina, pagina.qtdRegistros, registro);
   pagina.qtdRegistros++;
-
   // Se a pagina estiver cheia, vamos criar uma nova pagina vazia no final do arquivo e referenciar a nova pagina na pagina antiga, usando o contador
   if (pagina.qtdRegistros == NREGSPORPAGINA) {
     pagina.proxima = cabecalho.qtdPaginas;
-    escreve_pagina_no_arquivo(arquivo, cabecalho.qtdPaginas, cria_pagina_vazia());
-    cabecalho.qtdPaginas++;
-    atualiza_cabecalho_do_arquivo(arquivo, cabecalho);
+    insere_pagina_vazia_no_final_do_arquivo(arquivo);
   }
   
   escreve_pagina_no_arquivo(arquivo, indicePagina, pagina);
@@ -380,24 +384,59 @@ void atualiza_cabecalho_do_arquivo(FILE *arquivo, CabecalhoArquivo cabecalho) {
 
 void escreve_pagina_no_arquivo(FILE *arquivo, int indicePagina, Pagina pagina) {
   CabecalhoArquivo cabecalho = le_cabecalho_do_arquivo(arquivo);
-  long int posicao = 1 * sizeof(CabecalhoArquivo) + cabecalho.qtdNos * sizeof(Obra) + indicePagina * sizeof(Pagina);
+  long int posicao = 1 * sizeof(CabecalhoArquivo) 
+    + cabecalho.qtdNos * sizeof(Obra)
+    + indicePagina * sizeof(Pagina)
+    + indicePagina * NREGSPORPAGINA * sizeof(Registro);
+
   fseek(arquivo, posicao, SEEK_SET);
   fwrite(&pagina, sizeof(Pagina), 1, arquivo);
 }
 
 Pagina le_pagina_do_arquivo(FILE *arquivo, int indicePagina) {
   CabecalhoArquivo cabecalho = le_cabecalho_do_arquivo(arquivo);
-  long int posicao = 1 * sizeof(CabecalhoArquivo) + cabecalho.qtdNos * sizeof(Obra) + indicePagina * sizeof(Pagina);
-  fseek(arquivo, posicao, SEEK_SET);
+  long int posicao = 1 * sizeof(CabecalhoArquivo)
+    + cabecalho.qtdNos * sizeof(Obra)
+    + indicePagina * sizeof(Pagina)
+    + indicePagina * NREGSPORPAGINA * sizeof(Registro);
   Pagina pagina;
+  fseek(arquivo, posicao, SEEK_SET);
   fread(&pagina, sizeof(Pagina), 1, arquivo);
   return pagina;
+}
+
+Registro le_registro_do_arquivo(FILE *arquivo, int indicePagina, int indiceRegistro) {
+  CabecalhoArquivo cabecalho = le_cabecalho_do_arquivo(arquivo);
+  
+  long int posicao = 1 * sizeof(CabecalhoArquivo)
+    + cabecalho.qtdNos * sizeof(Obra)
+    + (indicePagina + 1) * sizeof(Pagina)
+    + indicePagina * NREGSPORPAGINA * sizeof(Registro)
+    + indiceRegistro * sizeof(Registro);
+
+  Registro registro;
+  fseek(arquivo, posicao, SEEK_SET);
+  fread(&registro, sizeof(Registro), 1, arquivo);
+  return registro;
+}
+
+void escreve_registro_no_arquivo(FILE *arquivo, int indicePagina, int indiceRegistro, Registro registro) {
+  CabecalhoArquivo cabecalho = le_cabecalho_do_arquivo(arquivo);
+  // printf("LOG escreve_registro_no_arquivo: indicePagina: %d, indiceRegistro: %d\n", indicePagina, indiceRegistro);
+  long int posicao = 1 * sizeof(CabecalhoArquivo)
+    + cabecalho.qtdNos * sizeof(Obra)
+    + (indicePagina + 1) * sizeof(Pagina)
+    + indicePagina * NREGSPORPAGINA * sizeof(Registro)
+    + indiceRegistro * sizeof(Registro);
+
+  fseek(arquivo, posicao, SEEK_SET);
+  fwrite(&registro, sizeof(Registro), 1, arquivo);
 }
 
 FILE *abre_arquivo(char *nomeArquivo, char *modo){
   FILE *arquivo;
   if (!(arquivo = fopen(nomeArquivo, modo))) {
-    printf("Erro na tentativa de abrir arquivo \"%s\".\n", nomeArquivo);
+    printf("erro na tentativa de abrir arquivo \"%s\".\n", nomeArquivo);
     exit(-1);
   }
   return arquivo;
@@ -439,9 +478,6 @@ Pagina cria_pagina_vazia() {
   Pagina pagina;
   pagina.qtdRegistros = 0;
   pagina.proxima = -1;
-  for (int i = 0; i < NREGSPORPAGINA; i++) {
-    pagina.registros[i] = cria_registro_vazio();
-  }
   return pagina;
 }
 
@@ -461,14 +497,24 @@ Obra cria_obra_vazia() {
   return obra;
 }
 
+void insere_pagina_vazia_no_final_do_arquivo(FILE *arquivo) {
+  CabecalhoArquivo cabecalho = le_cabecalho_do_arquivo(arquivo);
+  Pagina pagina = cria_pagina_vazia();
+
+  escreve_pagina_no_arquivo(arquivo, cabecalho.qtdPaginas, pagina);
+  for (int i = 0; i < NREGSPORPAGINA; i++) {
+    Registro registro = cria_registro_vazio();
+    escreve_registro_no_arquivo(arquivo, cabecalho.qtdPaginas, i, registro);
+  }
+  cabecalho.qtdPaginas++;
+  atualiza_cabecalho_do_arquivo(arquivo, cabecalho);
+}
+
 void teste_imprimir_paginas() {
 
   FILE *arquivo = abre_arquivo(NOME_ARQUIVO, "r");
 
   CabecalhoArquivo cabecalho = le_cabecalho_do_arquivo(arquivo);
-  printf("LOG - Cabecalho:\n");
-  printf("LOG - qtdNos: %u\n", cabecalho.qtdNos);
-  printf("LOG - qtdPaginas: %u\n", cabecalho.qtdPaginas);
   // return;
   for (unsigned int i = 0; i < cabecalho.qtdNos + 1; i++) {
     printf("LOG - Pagina %u:\n", i);
@@ -476,12 +522,18 @@ void teste_imprimir_paginas() {
     int indicePagina = i;
     do {
       pagina = le_pagina_do_arquivo(arquivo, indicePagina);
-      for (int j = 0; j < NREGSPORPAGINA; j++) {
-        if (pagina.registros[j].ocupado) {
-          printf("LOG - %s", pagina.registros[j].obra.autor);
-          printf("LOG - %s", pagina.registros[j].obra.nome);
-          printf("LOG - %u\n", pagina.registros[j].obra.ano);
-          printf("LOG - %s\n\n", pagina.registros[j].obra.arquivo);
+      printf("LOG - teste_imprimir_paginas - qtdPaginas: %d\n", cabecalho.qtdPaginas);
+      printf("LOG - teste_imprimir_paginas - qtdNos: %d\n", cabecalho.qtdNos);
+      printf("LOG - teste_imprimir_paginas - pagina: %d\n", indicePagina);
+      printf("LOG - teste_imprimir_paginas - qtdRegistros: %d\n", pagina.qtdRegistros);
+      printf("LOG - teste_imprimir_paginas - proxima: %d\n", pagina.proxima);
+      for (int j = 0; j < pagina.qtdRegistros; j++) {
+        Registro registro = le_registro_do_arquivo(arquivo, indicePagina, j);
+        if (registro.ocupado) {
+          printf("LOG - %s", registro.obra.autor);
+          printf("LOG - %s", registro.obra.nome);
+          printf("LOG - %u\n", registro.obra.ano);
+          printf("LOG - %s\n\n", registro.obra.arquivo);
         }
       }
       indicePagina = pagina.proxima;
@@ -494,6 +546,9 @@ void teste_imprimir_obras_que_criam_nos_no_arquivo() {
 
   FILE *arquivo = abre_arquivo(NOME_ARQUIVO, "r");
   CabecalhoArquivo cabecalho = le_cabecalho_do_arquivo(arquivo);
+  printf("LOG - Cabecalho:\n");
+  printf("LOG - qtdNos: %u\n", cabecalho.qtdNos);
+  printf("LOG - qtdPaginas: %u\n", cabecalho.qtdPaginas);
   for (unsigned int i = 0; i < cabecalho.qtdNos; i++) {
     Obra obra;
     fread(&obra, sizeof(Obra), 1, arquivo);
@@ -509,7 +564,6 @@ void imprime_obra_por_autor(No *no, char *autor, int *qtdEncontrados) {
   Consulta consulta;
   consulta.tipo = CONSULTA_SIMPLES;
   strcpy(consulta.nomeInicial, autor);
-
   if (no->tipo == TIPO_NO_AUTOR) {
     if (strcmp(autor, no->autor) <= 0) {
       if (no->noFilhoEsquerdo == NULL) {
