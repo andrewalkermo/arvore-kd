@@ -14,15 +14,14 @@ void processa_comando_consulta_por_faixa_de_nomes_de_autores_e_anos(No *raiz);
 void processa_comando_imprime_indice_da_arvore(No *raiz);
 void processa_comando_imprime_pagina(No *raiz);
 
-void adiciona_indices_das_paginas_na_arvore(No *no, unsigned int *indice);
 void cria_no_e_insere_na_arvore(No *no, Obra *obra);
+void adiciona_indices_das_paginas_na_arvore(No *no, unsigned int *indice);
 void insere_obra_no_arquivo(No *no, FILE *arquivo, Obra *obra);
 void insere_obra_na_pagina(FILE *arquivo, int indicePagina, Obra *obra);
 void atualiza_cabecalho_do_arquivo(FILE *arquivo, CabecalhoArquivo cabecalho);
 void escreve_pagina_no_arquivo(FILE *arquivo, int indicePagina, Pagina pagina);
 void escreve_registro_no_arquivo(FILE *arquivo, int indicePagina, int indiceRegistro, Registro registro);
 void insere_pagina_vazia_no_final_do_arquivo(FILE *arquivo);
-void imprime_obra_por_autor(No *no, char *autor, int *qtdEncontrados);
 
 void imprime_registros_da_pagina(int indicePagina, Consulta *consulta);
 void imprime_registros_que_correspondem_a_consulta(No *no, Consulta *consulta);
