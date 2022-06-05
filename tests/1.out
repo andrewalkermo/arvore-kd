@@ -23,3 +23,36 @@ livro de jose
 1950
 livrodejose.txt
 nao foi encontrado registro com nome: jose quarto
+nome: jose um
+livro de jose
+1950
+livrodejose.txt
+nome: jose segundo
+livro de jose s.
+1949
+livrodejoses.txt
+nome: jose terceiro
+livro de jose t.
+1949
+livrodejoset.txt
+nome: maria dois
+livro de maria
+1974
+livrodemaria.txt
+nao foi encontrado registro com nome entre: "tom" e "ze"
+nome: joana tres
+livro de joana
+1962
+livrodejoana.txt
+nao foi encontrado registro com ano entre: 2000 e 2022
+nome: maria dois
+livro de maria
+1974
+livrodemaria.txt
+nome: jose um fesq: 1962 fdir: 1974
+ano: 1962 fesq: alberto quatro fdir: pagina
+nome: alberto quatro fesq: pagina fdir: 1948
+ano: 1948 fesq: pagina fdir: pagina
+ano: 1974 fesq: karen sete fdir: manoel cinco
+nome: karen sete fesq: pagina fdir: pagina
+nome: manoel cinco fesq: pagina fdir: pagina

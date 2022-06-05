@@ -17,13 +17,16 @@ void processa_comando_imprime_pagina(No *raiz);
 void adiciona_indices_das_paginas_na_arvore(No *no, unsigned int *indice);
 void cria_no_e_insere_na_arvore(No *no, Obra *obra);
 void insere_obra_no_arquivo(No *no, FILE *arquivo, Obra *obra);
-void imprime_registros_da_pagina(int indicePagina, Consulta *consulta, int *qtdEncontrados);
 void insere_obra_na_pagina(FILE *arquivo, int indicePagina, Obra *obra);
 void atualiza_cabecalho_do_arquivo(FILE *arquivo, CabecalhoArquivo cabecalho);
 void escreve_pagina_no_arquivo(FILE *arquivo, int indicePagina, Pagina pagina);
 void escreve_registro_no_arquivo(FILE *arquivo, int indicePagina, int indiceRegistro, Registro registro);
 void insere_pagina_vazia_no_final_do_arquivo(FILE *arquivo);
 void imprime_obra_por_autor(No *no, char *autor, int *qtdEncontrados);
+
+void imprime_registros_da_pagina(int indicePagina, Consulta *consulta);
+void imprime_registros_que_correspondem_a_consulta(No *no, Consulta *consulta);
+void imprime_indice_da_arvore(No *no);
 
 No *prepara_arvore();
 No *inicializa_arvore_e_arquivo_com_entradas();
@@ -35,12 +38,15 @@ Pagina cria_pagina_vazia();
 Pagina le_pagina_do_arquivo(FILE *arquivo, int indicePagina);
 Registro cria_registro_vazio();
 Registro le_registro_do_arquivo(FILE *arquivo, int indicePagina, int indiceRegistro);
+int compara_no_com_consulta(No *no, Consulta *consulta);
 bool compara_obra_com_consulta(Obra *obra, Consulta *consulta);
 bool no_esta_vazio(No *no);
 Obra *le_obra_da_entrada();
 Obra cria_obra_vazia();
 FILE *abre_arquivo(char *nomeArquivo, char *modo);
 
+CabecalhoArquivo le_cabecalho_do_arquivo(FILE *arquivo);
+char *le_nome_da_entrada();
 
 void teste_imprimir_paginas();
 void teste_imprimir_obras_que_criam_nos_no_arquivo();
@@ -249,34 +255,64 @@ void processa_comando_insere_registro(No *raiz) {
   FILE *arquivo = abre_arquivo(NOME_ARQUIVO, "r+");
   insere_obra_no_arquivo(raiz, arquivo, obra);
   fclose(arquivo);
-  printf("inserido registro com nome: %s", obra->nome);
+  printf("inserido registro com nome: %s\n", obra->nome);
 }
 
 void processa_comando_consulta_simples(No *raiz) {
-  char autor[TAMANHO_NOME];
-  getchar();
-  fgets(autor, TAMANHO_NOME, stdin);
-  int encontrados = 0;
-  imprime_obra_por_autor(raiz, autor, &encontrados);
-  if (encontrados == 0) {
-    printf("nao foi encontrado registro com nome: %s", autor);
+  Consulta consulta;
+  strcpy(consulta.nomeInicial, le_nome_da_entrada());
+  consulta.qtdResultados = 0;
+  consulta.tipo = CONSULTA_SIMPLES;
+
+  imprime_registros_que_correspondem_a_consulta(raiz, &consulta);
+  if (consulta.qtdResultados == 0) {
+    printf("nao foi encontrado registro com nome: %s\n", consulta.nomeInicial);
   }
 }
 
 void processa_comando_consulta_por_faixa_de_nomes_de_autores(No *raiz) {
-  printf("consulta_por_faixa_de_nomes_de_autores");
+  Consulta consulta;
+  strcpy(consulta.nomeInicial, le_nome_da_entrada());
+  strcpy(consulta.nomeFinal, le_nome_da_entrada());
+  consulta.qtdResultados = 0;
+  consulta.tipo = CONSULTA_POR_FAIXA_DE_NOMES_DE_AUTORES;
+
+  imprime_registros_que_correspondem_a_consulta(raiz, &consulta);
+  if (consulta.qtdResultados == 0) {
+    printf("nao foi encontrado registro com nome entre: \"%s\" e \"%s\"\n", consulta.nomeInicial, consulta.nomeFinal);
+  }
 }
 
 void processa_comando_consulta_por_faixa_de_anos(No *raiz) {
-  printf("consulta_por_faixa_de_anos");
+  Consulta consulta;
+  scanf("%u", &consulta.anoInicial);
+  scanf("%u", &consulta.anoFinal);
+  consulta.qtdResultados = 0;
+  consulta.tipo = CONSULTA_POR_FAIXA_DE_ANOS;
+
+  imprime_registros_que_correspondem_a_consulta(raiz, &consulta);
+  if (consulta.qtdResultados == 0) {
+    printf("nao foi encontrado registro com ano entre: %d e %d\n", consulta.anoInicial, consulta.anoFinal);
+  }
 }
 
 void processa_comando_consulta_por_faixa_de_nomes_de_autores_e_anos(No *raiz) {
-  printf("consulta_por_faixa_de_nomes_de_autores_e_anos");
+  Consulta consulta;
+  strcpy(consulta.nomeInicial, le_nome_da_entrada());
+  strcpy(consulta.nomeFinal, le_nome_da_entrada());
+  scanf("%u", &consulta.anoInicial);
+  scanf("%u", &consulta.anoFinal);
+  consulta.qtdResultados = 0;
+  consulta.tipo = CONSULTA_POR_FAIXA_DE_NOMES_DE_AUTORES_E_ANOS;
+
+  imprime_registros_que_correspondem_a_consulta(raiz, &consulta);
+  if (consulta.qtdResultados == 0) {
+    printf("nao foi encontrado registro com nome entre: \"%s\" e \"%s\" e ano entre: %d e %d\n", consulta.nomeInicial, consulta.nomeFinal, consulta.anoInicial, consulta.anoFinal);
+  }
 }
 
 void processa_comando_imprime_indice_da_arvore(No *raiz) {
-  printf("imprime_indice_da_arvore");
+  imprime_indice_da_arvore(raiz);
 }
 
 void processa_comando_imprime_pagina(No *raiz) {
@@ -290,8 +326,8 @@ void processa_comando_imprime_pagina(No *raiz) {
     for (int j = 0; j < NREGSPORPAGINA; j++) {
       Registro registro = le_registro_do_arquivo(arquivo, indicePagina, j);
       if (registro.ocupado) {
-        printf("%s", registro.obra.autor);
-        printf("%s", registro.obra.nome);
+        printf("%s\n", registro.obra.autor);
+        printf("%s\n", registro.obra.nome);
         printf("%u\n", registro.obra.ano);
         printf("%s\n", registro.obra.arquivo);
       }
@@ -301,7 +337,7 @@ void processa_comando_imprime_pagina(No *raiz) {
   fclose(arquivo);
 }
 
-void imprime_registros_da_pagina(int indicePagina, Consulta *consulta, int *qtdEncontrados) {
+void imprime_registros_da_pagina(int indicePagina, Consulta *consulta) {
   Pagina pagina;
   FILE *arquivo = abre_arquivo(NOME_ARQUIVO, "r");
 
@@ -310,9 +346,9 @@ void imprime_registros_da_pagina(int indicePagina, Consulta *consulta, int *qtdE
     for (int i = 0; i < NREGSPORPAGINA; i++) {
       Registro registro = le_registro_do_arquivo(arquivo, indicePagina, i);
       if (registro.ocupado && compara_obra_com_consulta(&registro.obra, consulta)) {
-        (*qtdEncontrados)++;
-        printf("nome: %s", registro.obra.autor);
-        printf("%s", registro.obra.nome);
+        (*consulta).qtdResultados++;
+        printf("nome: %s\n", registro.obra.autor);
+        printf("%s\n", registro.obra.nome);
         printf("%u\n", registro.obra.ano);
         printf("%s\n", registro.obra.arquivo);
       }
@@ -466,9 +502,8 @@ bool no_esta_vazio(No *no) {
 
 Obra *le_obra_da_entrada() {
   Obra *obra = (Obra*) malloc(sizeof(Obra));
-  getchar();
-  fgets(obra->autor, TAMANHO_NOME, stdin);
-  fgets(obra->nome, TAMANHO_NOME, stdin);
+  strcpy(obra->autor, le_nome_da_entrada());
+  strcpy(obra->nome, le_nome_da_entrada());
   scanf("%u", &obra->ano);
   scanf("%s", obra->arquivo);
   return obra;
@@ -552,48 +587,145 @@ void teste_imprimir_obras_que_criam_nos_no_arquivo() {
   for (unsigned int i = 0; i < cabecalho.qtdNos; i++) {
     Obra obra;
     fread(&obra, sizeof(Obra), 1, arquivo);
-    printf("LOG - %s", obra.autor);
-    printf("LOG - %s", obra.nome);
+    printf("LOG - %s\n", obra.autor);
+    printf("LOG - %s\n", obra.nome);
     printf("LOG - %u\n", obra.ano);
     printf("LOG - %s\n\n", obra.arquivo);
   }
   fclose(arquivo);
 }
 
-void imprime_obra_por_autor(No *no, char *autor, int *qtdEncontrados) {
-  Consulta consulta;
-  consulta.tipo = CONSULTA_SIMPLES;
-  strcpy(consulta.nomeInicial, autor);
+// compara no com a consulta e retorna e indica qual no deve ser seguido
+// -1 deve ir para o no esquerdo
+// 0 deve ir para os dois nos
+// 1 deve ir para o no direito
+int compara_no_com_consulta(No *no, Consulta *consulta) {
   if (no->tipo == TIPO_NO_AUTOR) {
-    if (strcmp(autor, no->autor) <= 0) {
-      if (no->noFilhoEsquerdo == NULL) {
-        imprime_registros_da_pagina(no->indicePaginaEsquerda, &consulta, qtdEncontrados);
+    if (consulta->tipo == CONSULTA_SIMPLES) {
+      if (strcmp(consulta->nomeInicial, no->autor) <= 0) {
+        return -1;
       }
       else {
-        imprime_obra_por_autor(no->noFilhoEsquerdo, autor, qtdEncontrados);
+        return 1;
       }
     }
-    else {
-      if (no->noFilhoDireito == NULL) {
-        imprime_registros_da_pagina(no->indicePaginaDireita, &consulta, qtdEncontrados);
+    else if (consulta->tipo == CONSULTA_POR_FAIXA_DE_NOMES_DE_AUTORES || consulta->tipo == CONSULTA_POR_FAIXA_DE_NOMES_DE_AUTORES_E_ANOS) {
+      if (strcmp(no->autor, consulta->nomeInicial) >= 0 && strcmp(no->autor, consulta->nomeFinal) <= 0) {
+        return 0;
+      }
+      else if (strcmp(no->autor, consulta->nomeInicial) < 0) {
+        return 1;
       }
       else {
-        imprime_obra_por_autor(no->noFilhoDireito, autor, qtdEncontrados);
+        return -1;
       }
+    }
+    else if (consulta->tipo == CONSULTA_POR_FAIXA_DE_ANOS) {
+      return 0;
     }
   }
   else {
+    if (consulta->tipo == CONSULTA_SIMPLES || consulta->tipo == CONSULTA_POR_FAIXA_DE_NOMES_DE_AUTORES) {
+      return 0;
+    }
+    else if (consulta->tipo == CONSULTA_POR_FAIXA_DE_ANOS || consulta->tipo == CONSULTA_POR_FAIXA_DE_NOMES_DE_AUTORES_E_ANOS) {
+      if (no->ano >= consulta->anoInicial && no->ano <= consulta->anoFinal) {
+        return 0;
+      }
+      else if (no->ano < consulta->anoInicial) {
+        return 1;
+      }
+      else {
+        return -1;
+      }
+    }
+  }
+}
+
+void imprime_registros_que_correspondem_a_consulta(No *no, Consulta *consulta) {
+
+  int resultado = compara_no_com_consulta(no, consulta);
+  // printf("LOG - Resultado da comparação: %d\n", resultado);
+  if (resultado == -1) {
     if (no->noFilhoEsquerdo == NULL) {
-      imprime_registros_da_pagina(no->indicePaginaEsquerda, &consulta, qtdEncontrados);
+      imprime_registros_da_pagina(no->indicePaginaEsquerda, consulta);
     }
     else {
-      imprime_obra_por_autor(no->noFilhoEsquerdo, autor, qtdEncontrados);
+      imprime_registros_que_correspondem_a_consulta(no->noFilhoEsquerdo, consulta);
+    }
+  }
+  else if (resultado == 0) {
+    if (no->noFilhoEsquerdo == NULL) {
+      imprime_registros_da_pagina(no->indicePaginaEsquerda, consulta);
+    }
+    else {
+      imprime_registros_que_correspondem_a_consulta(no->noFilhoEsquerdo, consulta);
     }
     if (no->noFilhoDireito == NULL) {
-      imprime_registros_da_pagina(no->indicePaginaDireita, &consulta, qtdEncontrados);
+      imprime_registros_da_pagina(no->indicePaginaDireita, consulta);
     }
     else {
-      imprime_obra_por_autor(no->noFilhoDireito, autor, qtdEncontrados);
+      imprime_registros_que_correspondem_a_consulta(no->noFilhoDireito, consulta);
     }
+  }
+  else {
+    if (no->noFilhoDireito == NULL) {
+      imprime_registros_da_pagina(no->indicePaginaDireita, consulta);
+    }
+    else {
+      imprime_registros_que_correspondem_a_consulta(no->noFilhoDireito, consulta);
+    }
+  }
+}
+
+char *le_nome_da_entrada() {
+  char *nome = (char *) malloc(TAMANHO_NOME * sizeof(char));
+  fgets(nome, TAMANHO_NOME, stdin);
+  
+  if (nome[0] == '\n') {
+    return le_nome_da_entrada();
+  }
+
+  if ((strlen(nome) > 0) && (nome[strlen (nome) - 1] == '\n')) {
+    nome[strlen (nome) - 1] = '\0';
+  }
+
+  return nome;
+}
+
+void imprime_indice_da_arvore(No *no) {
+  if (no->tipo == TIPO_NO_AUTOR) {
+    printf("nome: %s ", no->autor);
+    if (no->noFilhoEsquerdo == NULL) {
+      printf("fesq: pagina ");
+    } else {
+      printf("fesq: %u ", no->noFilhoEsquerdo->ano);
+    }
+    if (no->noFilhoDireito == NULL) {
+      printf("fdir: pagina");
+    } else {
+      printf("fdir: %u", no->noFilhoDireito->ano);
+    }
+    printf("\n");
+  }
+  else {
+    printf("ano: %u ", no->ano);
+    if (no->noFilhoEsquerdo == NULL) {
+      printf("fesq: pagina ");
+    } else {
+      printf("fesq: %s ", no->noFilhoEsquerdo->autor);
+    }
+    if (no->noFilhoDireito == NULL) {
+      printf("fdir: pagina");
+    } else {
+      printf("fdir: %s", no->noFilhoDireito->autor);
+    }
+    printf("\n");
+  }
+  if (no->noFilhoEsquerdo != NULL) {
+    imprime_indice_da_arvore(no->noFilhoEsquerdo);
+  }
+  if (no->noFilhoDireito != NULL) {
+    imprime_indice_da_arvore(no->noFilhoDireito);
   }
 }
