@@ -1,7 +1,7 @@
 #!/bin/bash
 result=0
 cp -r src/ tests/src_temp/
-sed -i 's/#define NREGSPORPAGINA 3/##define NREGSPORPAGINA 1/' tests/src_temp/main.c
+sed -i 's/#define NREGSPORPAGINA 3/#define NREGSPORPAGINA 1/' tests/src_temp/types.h
 
 for input in tests/*.in; do
   output=${input%.in}.out
