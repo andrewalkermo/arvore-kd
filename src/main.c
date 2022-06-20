@@ -15,7 +15,7 @@ void processa_comando_imprime_indice_da_arvore(No *raiz);
 void processa_comando_imprime_pagina(No *raiz);
 
 void cria_no_e_insere_na_arvore(No *no, Obra *obra);
-void adiciona_indices_das_paginas_na_arvore(No *no, unsigned int *indice);
+void adiciona_indices_das_paginas_na_arvore(No *no, int *indice);
 
 void insere_obra_no_arquivo(No *no, FILE *arquivo, Obra *obra);
 void insere_obra_na_pagina(FILE *arquivo, int indicePagina, Obra *obra);
@@ -144,7 +144,7 @@ No *inicializa_arvore_e_arquivo_com_entradas() {
   return raiz;
 }
 
-void adiciona_indices_das_paginas_na_arvore(No *no, unsigned int *indice) {
+void adiciona_indices_das_paginas_na_arvore(No *no, int *indice) {
   if (no->noFilhoEsquerdo == NULL) {
     no->indicePaginaEsquerda = (*indice)++;
   } else {

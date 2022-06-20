@@ -54,7 +54,7 @@ struct Registro{
 
 struct Pagina{
   unsigned int qtdRegistros;
-  unsigned int proxima;
+  int proxima;
   Registro registros[NREGSPORPAGINA];
 };
 
