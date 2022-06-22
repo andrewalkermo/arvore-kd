@@ -1,4 +1,5 @@
 .vscode/*
+.idea/*
 *.dat
 main
 src/main
