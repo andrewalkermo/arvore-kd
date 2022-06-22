@@ -1,47 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
-
-#include "types.h"
-
-void processa_comandos(No *raiz);
-void processa_comando_insere_registro(No *raiz);
-void processa_comando_consulta_simples(No *raiz);
-void processa_comando_consulta_por_faixa_de_nomes_de_autores(No *raiz);
-void processa_comando_consulta_por_faixa_de_anos(No *raiz);
-void processa_comando_consulta_por_faixa_de_nomes_de_autores_e_anos(No *raiz);
-void processa_comando_imprime_indice_da_arvore(No *raiz);
-void processa_comando_imprime_pagina(No *raiz);
-
-void cria_no_e_insere_na_arvore(No *no, Obra *obra);
-void adiciona_indices_das_paginas_na_arvore(No *no, int *indice);
-
-void insere_obra_no_arquivo(No *no, FILE *arquivo, Obra *obra);
-void insere_obra_na_pagina(FILE *arquivo, int indicePagina, Obra *obra);
-void escreve_pagina_no_arquivo(FILE *arquivo, int indicePagina, Pagina pagina);
-void atualiza_cabecalho_do_arquivo(FILE *arquivo, CabecalhoArquivo cabecalho);
-
-void imprime_registros_da_pagina(int indicePagina, Consulta *consulta);
-void imprime_registros_que_correspondem_a_consulta(No *no, Consulta *consulta);
-void imprime_indice_da_arvore(No *no);
-
-No *prepara_arvore();
-No *inicializa_arvore_e_arquivo_com_entradas();
-No *estrutura_arvore_atraves_de_arquivo(FILE *arquivo);
-No *cria_no_vazio(TipoNo tipo);
-
-int compara_no_com_consulta(No *no, Consulta *consulta);
-bool compara_obra_com_consulta(Obra *obra, Consulta *consulta);
-bool no_esta_vazio(No *no);
-Obra *le_obra_da_entrada();
-Obra cria_obra_vazia();
-Pagina cria_pagina_vazia();
-Pagina le_pagina_do_arquivo(FILE *arquivo, int indicePagina);
-Registro cria_registro_vazio();
-FILE *abre_arquivo(char *nomeArquivo, char *modo);
-CabecalhoArquivo le_cabecalho_do_arquivo(FILE *arquivo);
-char *le_nome_da_entrada();
+#include "main.h"
 
 int main() {
   No *raiz = prepara_arvore();
@@ -100,7 +57,6 @@ No *prepara_arvore() {
   return raiz;
 }
 
-
 // le a quantidade de registros a serem inseridos para a criacao da arvore, cria o arquivo
 //  e salva no cabeçalho do arquivo a quantidade de registros
 // inicializa a arvore com os indices e as paginas com registros vazios
@@ -158,52 +114,6 @@ void adiciona_indices_das_paginas_na_arvore(No *no, int *indice) {
   }
 }
 
-// primeiro verifica o tipo de no a ser iserido
-// caso o tipo de no seja autor, faz a verificação com o auxilio da função srtcmp que compara a srings em ordem alfabetica,
-// se o nome do autor da obra é menor ou igual ao nome do autor do nó a inserção ocorre a esquerda, e caso seja maior, ocorre a direita
-// caso o tipo de de no seja do tipo ano, faz a comparação entre inteiros, caso o ano da obra seja menor ou igual ao ano do nó a inserção ocorre à esquerda e caso seja maior, ocorre a direita
-// a insercao ocorre de forma recursiva, percorrendo a arvore ate que seja encontrado o nó esquerdo ou direto que seja NULL
-void cria_no_e_insere_na_arvore(No *no, Obra *obra) {
-  if (no_esta_vazio(no)) {
-    if (no->tipo == TIPO_NO_AUTOR) {
-      strcpy(no->autor, obra->autor);
-    }
-    else {
-      no->ano = obra->ano;
-    }
-  }
-  else {
-    if (no->tipo == TIPO_NO_AUTOR) {
-      if (strcmp(obra->autor, no->autor) <= 0) {
-        if (no->noFilhoEsquerdo == NULL) {
-          no->noFilhoEsquerdo = cria_no_vazio(TIPO_NO_ANO);
-        }
-        cria_no_e_insere_na_arvore(no->noFilhoEsquerdo, obra);
-      }
-      else {
-        if (no->noFilhoDireito == NULL) {
-          no->noFilhoDireito = cria_no_vazio(TIPO_NO_ANO);
-        }
-        cria_no_e_insere_na_arvore(no->noFilhoDireito, obra);
-      }
-    }
-    else {
-      if (obra->ano <= no->ano) {
-        if (no->noFilhoEsquerdo == NULL) {
-          no->noFilhoEsquerdo = cria_no_vazio(TIPO_NO_AUTOR);
-        }
-        cria_no_e_insere_na_arvore(no->noFilhoEsquerdo, obra);
-      }
-      else {
-        if (no->noFilhoDireito == NULL) {
-          no->noFilhoDireito = cria_no_vazio(TIPO_NO_AUTOR);
-        }
-        cria_no_e_insere_na_arvore(no->noFilhoDireito, obra);
-      }
-    }
-  }
-}
-
 // faz a leitura dos registros que estao no arquivo
 // inicializa a arvore com os registros do arquivo como indice da arvore e salva a arvore no arquivo
 No *estrutura_arvore_atraves_de_arquivo(FILE *arquivo) {
@@ -221,51 +131,6 @@ No *estrutura_arvore_atraves_de_arquivo(FILE *arquivo) {
   adiciona_indices_das_paginas_na_arvore(raiz, &indice);
 
   return raiz;
-}
-
-CabecalhoArquivo le_cabecalho_do_arquivo(FILE *arquivo) {
-  CabecalhoArquivo cabecalhoArquivo;
-  fseek(arquivo, 0, SEEK_SET);
-  fread(&cabecalhoArquivo, sizeof(CabecalhoArquivo), 1, arquivo);
-  return cabecalhoArquivo;
-}
-
-// verifica o tipo de no a ser inserido
-// faz o comparativo de autor e de ano como descrito para a funcao cria_no_e_insere_na_arvore
-// e insere a obra na pagina
-void insere_obra_no_arquivo(No *no, FILE *arquivo, Obra *obra) {
-  if (no->tipo == TIPO_NO_AUTOR) {
-    if (strcmp(obra->autor, no->autor) <= 0) {
-      if (no->noFilhoEsquerdo == NULL) {
-        return insere_obra_na_pagina(arquivo, no->indicePaginaEsquerda, obra);
-      } else {
-        insere_obra_no_arquivo(no->noFilhoEsquerdo, arquivo, obra);
-      }
-    }
-    else {
-      if (no->noFilhoDireito == NULL) {
-        return insere_obra_na_pagina(arquivo, no->indicePaginaDireita, obra);
-      } else {
-        insere_obra_no_arquivo(no->noFilhoDireito, arquivo, obra);
-      }
-    }
-  }
-  else {
-    if (obra->ano <= no->ano) {
-      if (no->noFilhoEsquerdo == NULL) {
-        return insere_obra_na_pagina(arquivo, no->indicePaginaEsquerda, obra);
-      } else {
-        insere_obra_no_arquivo(no->noFilhoEsquerdo, arquivo, obra);
-      }
-    }
-    else {
-      if (no->noFilhoDireito == NULL) {
-        return insere_obra_na_pagina(arquivo, no->indicePaginaDireita, obra);
-      } else {
-        insere_obra_no_arquivo(no->noFilhoDireito, arquivo, obra);
-      }
-    }
-  }
 }
 
 void processa_comando_insere_registro(No *raiz) {
@@ -366,7 +231,7 @@ void processa_comando_imprime_pagina(No *raiz) {
 }
 
 // le o conteudo da pagina no arquivo e compara a obra com os valores da consulta
-// serao impressas todas as obras que sejam iguais ou estejam dentro do intervalo de valores da consulta 
+// serao impressas todas as obras que sejam iguais ou estejam dentro do intervalo de valores da consulta
 void imprime_registros_da_pagina(int indicePagina, Consulta *consulta) {
   Pagina pagina;
   FILE *arquivo = abre_arquivo(NOME_ARQUIVO, "r");
@@ -376,7 +241,10 @@ void imprime_registros_da_pagina(int indicePagina, Consulta *consulta) {
     for (int j = 0; j < NREGSPORPAGINA; j++) {
       if (pagina.registros[j].ocupado && compara_obra_com_consulta(&pagina.registros[j].obra, consulta)) {
         (*consulta).qtdResultados++;
-        consulta->tipo == CONSULTA_SIMPLES ? printf("nome: %s\n", pagina.registros[j].obra.autor) : printf("%s\n", pagina.registros[j].obra.autor);
+        if (consulta->tipo == CONSULTA_SIMPLES) {
+            printf("nome: ");
+        }
+        printf("%s\n", pagina.registros[j].obra.autor);
         printf("%s\n", pagina.registros[j].obra.nome);
         printf("%u\n", pagina.registros[j].obra.ano);
         printf("%s\n", pagina.registros[j].obra.arquivo);
@@ -385,208 +253,6 @@ void imprime_registros_da_pagina(int indicePagina, Consulta *consulta) {
     indicePagina = pagina.proxima;
   } while (pagina.proxima != -1);
   fclose(arquivo);
-}
-
-// Primeiro verifica-se o tipo de consulta
-// Na consulta simples, retorna true se houver registros na árvore com o valor de nome indicado
-// Na consulta por faixa de nome de autores e verificado se o nome do autor for maior ou igual ao nome do autor nomeInicial e menor ao nome do autor nomeFinal, considerando-se a ordem alfabetica
-// Na consulta por faixa de nome de ano e verificado se o ano da obra é maior ou igual ao nome do ano anoInicial e menor ao ano anoFinal 
-// Na consulta por faixa de nome e de autores e verificado se a obra se encontra em ambos os intervalos das consultas descritas acima
-
-bool compara_obra_com_consulta(Obra *obra, Consulta *consulta) {
-  if (
-    (
-      consulta->tipo == CONSULTA_SIMPLES 
-      && strcmp(obra->autor, consulta->nomeInicial) == 0
-    )
-    || (
-      consulta->tipo == CONSULTA_POR_FAIXA_DE_NOMES_DE_AUTORES
-      && strcmp(obra->autor, consulta->nomeInicial) >= 0
-      && strcmp(obra->autor, consulta->nomeFinal) <= 0
-    )
-    || (
-      consulta->tipo == CONSULTA_POR_FAIXA_DE_ANOS
-      && obra->ano >= consulta->anoInicial
-      && obra->ano <= consulta->anoFinal
-    )
-    || (
-      consulta->tipo == CONSULTA_POR_FAIXA_DE_NOMES_DE_AUTORES_E_ANOS
-      && strcmp(obra->autor, consulta->nomeInicial) >= 0
-      && strcmp(obra->autor, consulta->nomeFinal) <= 0
-      && obra->ano >= consulta->anoInicial
-      && obra->ano <= consulta->anoFinal
-    )
-  ) {
-    return true;
-  }
-  return false;
-}
-
-// faz a leitura da pagina no arquivo e caso a pagina nao esteja cheia, adiciona a obra na pagina e incrementa a quantidade de registros na pagina
-void insere_obra_na_pagina(FILE *arquivo, int indicePagina, Obra *obra) {
-
-  CabecalhoArquivo cabecalho = le_cabecalho_do_arquivo(arquivo);
-  Pagina pagina = le_pagina_do_arquivo(arquivo, indicePagina);
-  
-  while(pagina.proxima != -1) {
-    indicePagina = pagina.proxima;
-    pagina = le_pagina_do_arquivo(arquivo, indicePagina);
-  }
-
-  pagina.registros[pagina.qtdRegistros].obra = *obra;
-  pagina.registros[pagina.qtdRegistros].ocupado = true;
-  pagina.qtdRegistros++;
-
-  // Se a pagina estiver cheia, vamos criar uma nova pagina vazia no final do arquivo e referenciar a nova pagina na pagina antiga, usando o contador
-  if (pagina.qtdRegistros == NREGSPORPAGINA) {
-    pagina.proxima = cabecalho.qtdPaginas;
-    escreve_pagina_no_arquivo(arquivo, cabecalho.qtdPaginas, cria_pagina_vazia());
-    cabecalho.qtdPaginas++;
-    atualiza_cabecalho_do_arquivo(arquivo, cabecalho);
-  }
-  
-  escreve_pagina_no_arquivo(arquivo, indicePagina, pagina);
-}
-
-void atualiza_cabecalho_do_arquivo(FILE *arquivo, CabecalhoArquivo cabecalho) {
-  fseek(arquivo, 0, SEEK_SET);
-  fwrite(&cabecalho, sizeof(CabecalhoArquivo), 1, arquivo);
-}
-
-void escreve_pagina_no_arquivo(FILE *arquivo, int indicePagina, Pagina pagina) {
-  CabecalhoArquivo cabecalho = le_cabecalho_do_arquivo(arquivo);
-  long int posicao = 1 * sizeof(CabecalhoArquivo) + cabecalho.qtdNos * sizeof(Obra) + indicePagina * sizeof(Pagina);
-  fseek(arquivo, posicao, SEEK_SET);
-  fwrite(&pagina, sizeof(Pagina), 1, arquivo);
-}
-
-// le a pagina e a retorna
-Pagina le_pagina_do_arquivo(FILE *arquivo, int indicePagina) {
-  CabecalhoArquivo cabecalho = le_cabecalho_do_arquivo(arquivo);
-  long int posicao = 1 * sizeof(CabecalhoArquivo) + cabecalho.qtdNos * sizeof(Obra) + indicePagina * sizeof(Pagina);
-  fseek(arquivo, posicao, SEEK_SET);
-  Pagina pagina;
-  fread(&pagina, sizeof(Pagina), 1, arquivo);
-  return pagina;
-}
-
-FILE *abre_arquivo(char *nomeArquivo, char *modo){
-  FILE *arquivo;
-  if (!(arquivo = fopen(nomeArquivo, modo))) {
-    printf("Erro na tentativa de abrir arquivo \"%s\".\n", nomeArquivo);
-    exit(-1);
-  }
-  return arquivo;
-}
-
-No *cria_no_vazio(TipoNo tipo) {
-  No *no = (No*) malloc(sizeof(No));
-  no->tipo = tipo;
-  no->noFilhoEsquerdo = NULL;
-  no->noFilhoDireito = NULL;
-  no->indicePaginaEsquerda = -1;
-  no->indicePaginaDireita = -1;
-
-  if (tipo == TIPO_NO_AUTOR) {
-    no->autor[0] = '\0';
-  }
-  else {
-    no->ano = 0;
-  }
-  return no;
-}
-
-bool no_esta_vazio(No *no) {
-  return (no->tipo == TIPO_NO_AUTOR && no->autor[0] == '\0') ||
-         (no->tipo == TIPO_NO_ANO && no->ano == 0);
-}
-
-// aloca o espaço na memória para a struct de obra e faz leitura de registros da entrada
-Obra *le_obra_da_entrada() {
-  Obra *obra = (Obra*) malloc(sizeof(Obra));
-  strcpy(obra->autor, le_nome_da_entrada());
-  strcpy(obra->nome, le_nome_da_entrada());
-  scanf("%u", &obra->ano);
-  scanf("%s", obra->arquivo);
-  return obra;
-}
-
-// cria a pagina e inicializa com registros vazios a quantidade maxima de registros
-Pagina cria_pagina_vazia() {
-  Pagina pagina;
-  pagina.qtdRegistros = 0;
-  pagina.proxima = -1;
-  for (int i = 0; i < NREGSPORPAGINA; i++) {
-    pagina.registros[i] = cria_registro_vazio();
-  }
-  return pagina;
-}
-
-Registro cria_registro_vazio() {
-  Registro registro;
-  registro.ocupado = false;
-  registro.obra = cria_obra_vazia();
-  return registro;
-}
-
-Obra cria_obra_vazia() {
-  Obra obra;
-  obra.autor[0] = '\0';
-  obra.nome[0] = '\0';
-  obra.ano = 0;
-  obra.arquivo[0] = '\0';
-  return obra;
-}
-
-// compara no com a consulta e retorna e indica qual no deve ser seguido
-// -1 deve ir para o no esquerdo
-// 0 deve ir para os dois nos
-// 1 deve ir para o no direito
-int compara_no_com_consulta(No *no, Consulta *consulta) {
-  if (no->tipo == TIPO_NO_AUTOR) {
-    if (consulta->tipo == CONSULTA_SIMPLES) {
-      if (strcmp(consulta->nomeInicial, no->autor) <= 0) {
-        return -1;
-      }
-      else {
-        return 1;
-      }
-    }
-    else if (consulta->tipo == CONSULTA_POR_FAIXA_DE_NOMES_DE_AUTORES || consulta->tipo == CONSULTA_POR_FAIXA_DE_NOMES_DE_AUTORES_E_ANOS) {
-      if (strcmp(no->autor, consulta->nomeInicial) >= 0 && strcmp(no->autor, consulta->nomeFinal) <= 0) {
-        return 0;
-      }
-      else if (strcmp(no->autor, consulta->nomeInicial) < 0) {
-        return 1;
-      }
-      else {
-        return -1;
-      }
-    }
-    else if (consulta->tipo == CONSULTA_POR_FAIXA_DE_ANOS) {
-      return 0;
-    }
-  }
-  else {
-    if (consulta->tipo == CONSULTA_SIMPLES || consulta->tipo == CONSULTA_POR_FAIXA_DE_NOMES_DE_AUTORES) {
-      return 0;
-    }
-    else if (consulta->tipo == CONSULTA_POR_FAIXA_DE_ANOS || consulta->tipo == CONSULTA_POR_FAIXA_DE_NOMES_DE_AUTORES_E_ANOS) {
-      if (no->ano >= consulta->anoInicial && no->ano <= consulta->anoFinal) {
-        return 0;
-      }
-      else if (no->ano < consulta->anoInicial) {
-        return 1;
-      }
-      else {
-        return -1;
-      }
-    }
-  }
-
-  //esperado que retorne antes de chegar neste ponto
-  printf("Erro na consulta");
-  exit(-1);
 }
 
 void imprime_registros_que_correspondem_a_consulta(No *no, Consulta *consulta) {
@@ -621,62 +287,5 @@ void imprime_registros_que_correspondem_a_consulta(No *no, Consulta *consulta) {
     else {
       imprime_registros_que_correspondem_a_consulta(no->noFilhoDireito, consulta);
     }
-  }
-}
-
-char *le_nome_da_entrada() {
-  char *nome = (char *) malloc(TAMANHO_NOME * sizeof(char));
-  fgets(nome, TAMANHO_NOME, stdin);
-  
-  if (nome[0] == '\n') {
-    return le_nome_da_entrada();
-  }
-
-  if ((strlen(nome) > 0) && (nome[strlen (nome) - 1] == '\n')) {
-    nome[strlen (nome) - 1] = '\0';
-  }
-
-  return nome;
-}
-
-// imprime todos os indices da arvore
-// comecando na raiz e descendo na arvore imprimindo os nos da esquerda e depois da direita para cada no
-// e caso o no corresponda a uma página, imprime a informacao de pagina
-void imprime_indice_da_arvore(No *no) {
-  if (no->noFilhoEsquerdo != NULL) {
-    imprime_indice_da_arvore(no->noFilhoEsquerdo);
-  }
-  if (no->tipo == TIPO_NO_AUTOR) {
-    printf("nome: %s ", no->autor);
-    if (no->noFilhoEsquerdo == NULL) {
-      printf("fesq: pagina ");
-    } else {
-      printf("fesq: %u ", no->noFilhoEsquerdo->ano);
-    }
-    // verifica se e um no folha
-    if (no->noFilhoDireito == NULL) {
-      printf("fdir: pagina");
-    } else {
-      printf("fdir: %u", no->noFilhoDireito->ano);
-    }
-    printf("\n");
-  }
-  else {
-    printf("ano: %u ", no->ano);
-    // verifica se e um no folha
-    if (no->noFilhoEsquerdo == NULL) {
-      printf("fesq: pagina ");
-    } else {
-      printf("fesq: %s ", no->noFilhoEsquerdo->autor);
-    }
-    if (no->noFilhoDireito == NULL) {
-      printf("fdir: pagina");
-    } else {
-      printf("fdir: %s", no->noFilhoDireito->autor);
-    }
-    printf("\n");
-  }
-  if (no->noFilhoDireito != NULL) {
-    imprime_indice_da_arvore(no->noFilhoDireito);
   }
 }
