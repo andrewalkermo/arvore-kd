@@ -10,7 +10,7 @@ for input in tests/teste_entradas_saidas/entradas/*; do
 
   output=tests/teste_entradas_saidas/saidas/s${input##*/teste}
   
-  gcc -o main tests/src_temp/main.c
+  gcc -std=c99 -Wall -o main tests/src_temp/main.c
   ./main < $input > test.out
   diff -w -u1 --color=auto --palette='ad=1;3;38;5;154:de=1;3;38;5;9' test.out $output && echo "OK" || result=1
 

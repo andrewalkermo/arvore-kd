@@ -51,7 +51,7 @@ int main() {
 
 void processa_comandos(No *raiz) {
   char comando;
-  while (scanf("%s", &comando)) {
+  while (scanf("%c", &comando)) {
     switch (comando) {
       case INSERE_REGISTRO:
         processa_comando_insere_registro(raiz);
@@ -89,7 +89,7 @@ No *prepara_arvore() {
   No *raiz;
   FILE *arquivo;
 
-  if (arquivo = fopen(NOME_ARQUIVO, "r")) {
+  if ((arquivo = fopen(NOME_ARQUIVO, "r"))) {
     raiz = estrutura_arvore_atraves_de_arquivo(arquivo);
     fclose(arquivo);
   }
@@ -157,6 +157,7 @@ void adiciona_indices_das_paginas_na_arvore(No *no, int *indice) {
     adiciona_indices_das_paginas_na_arvore(no->noFilhoDireito, indice);
   }
 }
+
 // primeiro verifica o tipo de no a ser iserido
 // caso o tipo de no seja autor, faz a verificação com o auxilio da função srtcmp que compara a srings em ordem alfabetica,
 // se o nome do autor da obra é menor ou igual ao nome do autor do nó a inserção ocorre a esquerda, e caso seja maior, ocorre a direita
@@ -496,8 +497,8 @@ No *cria_no_vazio(TipoNo tipo) {
 }
 
 bool no_esta_vazio(No *no) {
-  return no->tipo == TIPO_NO_AUTOR && no->autor[0] == '\0' ||
-         no->tipo == TIPO_NO_ANO && no->ano == 0;
+  return (no->tipo == TIPO_NO_AUTOR && no->autor[0] == '\0') ||
+         (no->tipo == TIPO_NO_ANO && no->ano == 0);
 }
 
 // aloca o espaço na memória para a struct de obra e faz leitura de registros da entrada
@@ -582,6 +583,10 @@ int compara_no_com_consulta(No *no, Consulta *consulta) {
       }
     }
   }
+
+  //esperado que retorne antes de chegar neste ponto
+  printf("Erro na consulta");
+  exit(-1);
 }
 
 void imprime_registros_que_correspondem_a_consulta(No *no, Consulta *consulta) {

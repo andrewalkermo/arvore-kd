@@ -6,7 +6,7 @@ sed -i 's/#define NREGSPORPAGINA 3/#define NREGSPORPAGINA 10/' tests/src_temp/ty
 for input in tests/*.in; do
   output=${input%.in}.out
   rm -f arvore.dat
-  gcc -o main tests/src_temp/main.c
+  gcc -std=c99 -Wall -o main tests/src_temp/main.c
   ./main < $input > test.out
   diff -w -u1 --color=auto --palette='ad=1;3;38;5;154:de=1;3;38;5;9' test.out $output && echo "OK" || result=1
 done
