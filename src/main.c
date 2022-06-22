@@ -15,7 +15,7 @@ void processa_comando_imprime_indice_da_arvore(No *raiz);
 void processa_comando_imprime_pagina(No *raiz);
 
 void cria_no_e_insere_na_arvore(No *no, Obra *obra);
-void adiciona_indices_das_paginas_na_arvore(No *no, unsigned int *indice);
+void adiciona_indices_das_paginas_na_arvore(No *no, int *indice);
 
 void insere_obra_no_arquivo(No *no, FILE *arquivo, Obra *obra);
 void insere_obra_na_pagina(FILE *arquivo, int indicePagina, Obra *obra);
@@ -51,7 +51,7 @@ int main() {
 
 void processa_comandos(No *raiz) {
   char comando;
-  while (scanf("%s", &comando)) {
+  while (scanf("%c", &comando)) {
     switch (comando) {
       case INSERE_REGISTRO:
         processa_comando_insere_registro(raiz);
@@ -89,7 +89,7 @@ No *prepara_arvore() {
   No *raiz;
   FILE *arquivo;
 
-  if (arquivo = fopen(NOME_ARQUIVO, "r")) {
+  if ((arquivo = fopen(NOME_ARQUIVO, "r"))) {
     raiz = estrutura_arvore_atraves_de_arquivo(arquivo);
     fclose(arquivo);
   }
@@ -144,7 +144,7 @@ No *inicializa_arvore_e_arquivo_com_entradas() {
   return raiz;
 }
 
-void adiciona_indices_das_paginas_na_arvore(No *no, unsigned int *indice) {
+void adiciona_indices_das_paginas_na_arvore(No *no, int *indice) {
   if (no->noFilhoEsquerdo == NULL) {
     no->indicePaginaEsquerda = (*indice)++;
   } else {
@@ -157,6 +157,7 @@ void adiciona_indices_das_paginas_na_arvore(No *no, unsigned int *indice) {
     adiciona_indices_das_paginas_na_arvore(no->noFilhoDireito, indice);
   }
 }
+
 // primeiro verifica o tipo de no a ser iserido
 // caso o tipo de no seja autor, faz a verificação com o auxilio da função srtcmp que compara a srings em ordem alfabetica,
 // se o nome do autor da obra é menor ou igual ao nome do autor do nó a inserção ocorre a esquerda, e caso seja maior, ocorre a direita
@@ -272,7 +273,7 @@ void processa_comando_insere_registro(No *raiz) {
   FILE *arquivo = abre_arquivo(NOME_ARQUIVO, "r+");
   insere_obra_no_arquivo(raiz, arquivo, obra);
   fclose(arquivo);
-  printf("inserido registro com nome: %s\n", obra->nome);
+  printf("inserido registro com nome: %s\n", obra->autor);
 }
 
 // faz a leitura do valor da consulta, verifica se existe registros que correspondam a consulta
@@ -375,7 +376,7 @@ void imprime_registros_da_pagina(int indicePagina, Consulta *consulta) {
     for (int j = 0; j < NREGSPORPAGINA; j++) {
       if (pagina.registros[j].ocupado && compara_obra_com_consulta(&pagina.registros[j].obra, consulta)) {
         (*consulta).qtdResultados++;
-        printf("nome: %s\n", pagina.registros[j].obra.autor);
+        consulta->tipo == CONSULTA_SIMPLES ? printf("nome: %s\n", pagina.registros[j].obra.autor) : printf("%s\n", pagina.registros[j].obra.autor);
         printf("%s\n", pagina.registros[j].obra.nome);
         printf("%u\n", pagina.registros[j].obra.ano);
         printf("%s\n", pagina.registros[j].obra.arquivo);
@@ -496,8 +497,8 @@ No *cria_no_vazio(TipoNo tipo) {
 }
 
 bool no_esta_vazio(No *no) {
-  return no->tipo == TIPO_NO_AUTOR && no->autor[0] == '\0' ||
-         no->tipo == TIPO_NO_ANO && no->ano == 0;
+  return (no->tipo == TIPO_NO_AUTOR && no->autor[0] == '\0') ||
+         (no->tipo == TIPO_NO_ANO && no->ano == 0);
 }
 
 // aloca o espaço na memória para a struct de obra e faz leitura de registros da entrada
@@ -582,6 +583,10 @@ int compara_no_com_consulta(No *no, Consulta *consulta) {
       }
     }
   }
+
+  //esperado que retorne antes de chegar neste ponto
+  printf("Erro na consulta");
+  exit(-1);
 }
 
 void imprime_registros_que_correspondem_a_consulta(No *no, Consulta *consulta) {
@@ -638,6 +643,9 @@ char *le_nome_da_entrada() {
 // comecando na raiz e descendo na arvore imprimindo os nos da esquerda e depois da direita para cada no
 // e caso o no corresponda a uma página, imprime a informacao de pagina
 void imprime_indice_da_arvore(No *no) {
+  if (no->noFilhoEsquerdo != NULL) {
+    imprime_indice_da_arvore(no->noFilhoEsquerdo);
+  }
   if (no->tipo == TIPO_NO_AUTOR) {
     printf("nome: %s ", no->autor);
     if (no->noFilhoEsquerdo == NULL) {
@@ -667,9 +675,6 @@ void imprime_indice_da_arvore(No *no) {
       printf("fdir: %s", no->noFilhoDireito->autor);
     }
     printf("\n");
-  }
-  if (no->noFilhoEsquerdo != NULL) {
-    imprime_indice_da_arvore(no->noFilhoEsquerdo);
   }
   if (no->noFilhoDireito != NULL) {
     imprime_indice_da_arvore(no->noFilhoDireito);
